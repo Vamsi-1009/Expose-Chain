@@ -23,3 +23,7 @@ python-dateutil==2.9.0
 
 # Geolocation
 geoip2==4.8.0
+
+# SSL Certificate Analysis
+cryptography==42.0.5
+pyOpenSSL==24.0.0

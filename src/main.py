@@ -4,6 +4,9 @@ AI-Powered Attack Surface & Threat Intelligence Platform
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from src.api import router
 from src.config import settings
 
@@ -25,8 +28,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files if directory exists
+static_path = Path("static")
+if static_path.exists():
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Include API routes
 app.include_router(router)
+
+
+# Serve the frontend
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def serve_frontend():
+    """Serve the web interface"""
+    template_path = Path("templates/index.html")
+    if template_path.exists():
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "<h1>ExposeChain API</h1><p>Frontend template not found. Visit <a href='/docs'>/docs</a> for API documentation.</p>"
 
 
 if __name__ == "__main__":
@@ -42,6 +61,7 @@ if __name__ == "__main__":
     ╚══════════════════════════════════════════════════════════╝
     
     🚀 Starting server...
+    🌐 Web Interface: http://{settings.HOST}:{settings.PORT}/
     📍 API Docs: http://{settings.HOST}:{settings.PORT}/docs
     🔗 Health Check: http://{settings.HOST}:{settings.PORT}/health
     """)

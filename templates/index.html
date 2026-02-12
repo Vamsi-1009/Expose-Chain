@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExposeChain - AI-Powered Threat Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .scan-result {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loading {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .badge-low { background: #10b981; }
+        .badge-medium { background: #f59e0b; }
+        .badge-high { background: #ef4444; }
+        .badge-critical { background: #dc2626; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <div class="gradient-bg text-white py-8 shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold flex items-center">
+                        <i class="fas fa-shield-alt mr-3"></i>
+                        ExposeChain
+                    </h1>
+                    <p class="text-purple-100 mt-2">AI-Powered Attack Surface & Threat Intelligence Platform</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-purple-200">Version 1.0.0</div>
+                    <div class="text-xs text-purple-300 mt-1">by Vamsi Krishna</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Search Box -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex gap-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-search mr-2"></i>Enter Domain or IP Address
+                    </label>
+                    <input 
+                        type="text" 
+                        id="targetInput" 
+                        placeholder="e.g., google.com or 8.8.8.8"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        onkeypress="if(event.key==='Enter') startScan()"
+                    >
+                </div>
+                <div class="w-48">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Scan Type</label>
+                    <select id="scanType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <option value="quick">Quick Scan</option>
+                        <option value="full">Full Scan</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button 
+                        onclick="startScan()" 
+                        id="scanButton"
+                        class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-200 flex items-center"
+                    >
+                        <i class="fas fa-radar mr-2"></i>
+                        Scan Now
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingSection" class="hidden bg-white rounded-lg shadow-md p-8 mb-8 text-center">
+            <div class="loading mx-auto mb-4"></div>
+            <p class="text-gray-600 font-medium">Scanning target... Please wait</p>
+            <p class="text-sm text-gray-500 mt-2">Performing DNS, WHOIS, Geolocation, and SSL analysis</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden scan-result">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Target Type</p>
+                            <p class="text-2xl font-bold text-gray-800" id="targetType">-</p>
+                        </div>
+                        <i class="fas fa-bullseye text-4xl text-purple-500"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Risk Level</p>
+                            <p class="text-2xl font-bold" id="riskLevel">-</p>
+                        </div>
+                        <i class="fas fa-exclamation-triangle text-4xl text-yellow-500"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">SSL Score</p>
+                            <p class="text-2xl font-bold text-gray-800" id="sslScore">-</p>
+                        </div>
+                        <i class="fas fa-lock text-4xl text-green-500"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">IPs Found</p>
+                            <p class="text-2xl font-bold text-gray-800" id="ipCount">-</p>
+                        </div>
+                        <i class="fas fa-network-wired text-4xl text-blue-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Results Tabs -->
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="border-b border-gray-200">
+                    <nav class="flex -mb-px">
+                        <button onclick="showTab('dns')" class="tab-button active px-6 py-4 border-b-2 font-medium text-sm" data-tab="dns">
+                            <i class="fas fa-server mr-2"></i>DNS Records
+                        </button>
+                        <button onclick="showTab('whois')" class="tab-button px-6 py-4 border-b-2 font-medium text-sm" data-tab="whois">
+                            <i class="fas fa-file-alt mr-2"></i>WHOIS Data
+                        </button>
+                        <button onclick="showTab('geo')" class="tab-button px-6 py-4 border-b-2 font-medium text-sm" data-tab="geo">
+                            <i class="fas fa-globe mr-2"></i>Geolocation
+                        </button>
+                        <button onclick="showTab('ssl')" class="tab-button px-6 py-4 border-b-2 font-medium text-sm" data-tab="ssl">
+                            <i class="fas fa-shield-alt mr-2"></i>SSL Certificate
+                        </button>
+                        <button onclick="showTab('raw')" class="tab-button px-6 py-4 border-b-2 font-medium text-sm" data-tab="raw">
+                            <i class="fas fa-code mr-2"></i>Raw JSON
+                        </button>
+                    </nav>
+                </div>
+
+                <div class="p-6">
+                    <!-- DNS Tab -->
+                    <div id="dnsTab" class="tab-content">
+                        <div id="dnsContent"></div>
+                    </div>
+
+                    <!-- WHOIS Tab -->
+                    <div id="whoisTab" class="tab-content hidden">
+                        <div id="whoisContent"></div>
+                    </div>
+
+                    <!-- Geolocation Tab -->
+                    <div id="geoTab" class="tab-content hidden">
+                        <div id="geoContent"></div>
+                    </div>
+
+                    <!-- SSL Tab -->
+                    <div id="sslTab" class="tab-content hidden">
+                        <div id="sslContent"></div>
+                    </div>
+
+                    <!-- Raw JSON Tab -->
+                    <div id="rawTab" class="tab-content hidden">
+                        <pre id="rawContent" class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96 text-sm"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2026 ExposeChain. Built with ❤️ by Vamsi Krishna</p>
+            <p class="text-sm text-gray-400 mt-2">AI-Powered Cybersecurity Intelligence Platform</p>
+        </div>
+    </footer>
+
+    <script>
+        let scanData = null;
+
+        function startScan() {
+            const target = document.getElementById('targetInput').value.trim();
+            const scanType = document.getElementById('scanType').value;
+
+            if (!target) {
+                alert('Please enter a domain or IP address');
+                return;
+            }
+
+            // Show loading, hide results
+            document.getElementById('loadingSection').classList.remove('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+
+            // Make API call
+            fetch('/api/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    target: target,
+                    scan_type: scanType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                scanData = data;
+                displayResults(data);
+                document.getElementById('loadingSection').classList.add('hidden');
+                document.getElementById('resultsSection').classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Scan failed: ' + error.message);
+                document.getElementById('loadingSection').classList.add('hidden');
+            });
+        }
+
+        function displayResults(data) {
+            // Update summary cards
+            document.getElementById('targetType').textContent = data.target_type.toUpperCase();
+            
+            const riskLevel = data.data.domain_analysis?.risk_level || 'unknown';
+            const riskElement = document.getElementById('riskLevel');
+            riskElement.textContent = riskLevel.toUpperCase();
+            riskElement.className = `text-2xl font-bold badge-${riskLevel} text-white px-3 py-1 rounded`;
+            
+            document.getElementById('sslScore').textContent = data.data.ssl_security_analysis?.security_score || 'N/A';
+            document.getElementById('ipCount').textContent = data.data.geolocation?.total_ips || '0';
+
+            // Display DNS records
+            displayDNS(data.data.dns_lookup);
+            
+            // Display WHOIS
+            displayWHOIS(data.data.whois_lookup);
+            
+            // Display Geolocation
+            displayGeolocation(data.data.geolocation);
+            
+            // Display SSL
+            displaySSL(data.data.ssl_certificate, data.data.ssl_security_analysis);
+            
+            // Display raw JSON
+            document.getElementById('rawContent').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function displayDNS(dns) {
+            const container = document.getElementById('dnsContent');
+            let html = '';
+
+            if (dns && dns.dns_records) {
+                for (const [type, records] of Object.entries(dns.dns_records)) {
+                    if (records.success) {
+                        html += `
+                            <div class="mb-6">
+                                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm mr-2">${type}</span>
+                                    ${records.count} record(s) - ${records.query_time_ms}ms
+                                </h3>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                        `;
+                        
+                        records.records.forEach(record => {
+                            html += `<div class="mb-2 font-mono text-sm">`;
+                            if (type === 'A' || type === 'AAAA') {
+                                html += `IP: ${record.ip} (TTL: ${record.ttl}s)`;
+                            } else if (type === 'MX') {
+                                html += `Priority: ${record.priority} - ${record.mail_server}`;
+                            } else if (type === 'NS') {
+                                html += `${record.nameserver}`;
+                            } else if (type === 'TXT') {
+                                html += `${record.data}`;
+                            }
+                            html += `</div>`;
+                        });
+                        
+                        html += `</div></div>`;
+                    } else {
+                        html += `
+                            <div class="mb-4">
+                                <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">${type}</span>
+                                <span class="text-gray-500 ml-2">${records.error}</span>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            container.innerHTML = html || '<p class="text-gray-500">No DNS data available</p>';
+        }
+
+        function displayWHOIS(whois) {
+            const container = document.getElementById('whoisContent');
+            if (!whois || !whois.success) {
+                container.innerHTML = '<p class="text-gray-500">WHOIS data not available</p>';
+                return;
+            }
+
+            const html = `
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-semibold text-lg mb-3">Registration Info</h3>
+                        <div class="space-y-2">
+                            <p><span class="font-medium">Registrar:</span> ${whois.registrar || 'N/A'}</p>
+                            <p><span class="font-medium">Created:</span> ${whois.creation_date || 'N/A'}</p>
+                            <p><span class="font-medium">Expires:</span> ${whois.expiration_date || 'N/A'}</p>
+                            <p><span class="font-medium">Updated:</span> ${whois.updated_date || 'N/A'}</p>
+                            <p><span class="font-medium">Domain Age:</span> ${whois.domain_age_days || 'N/A'} days</p>
+                            <p><span class="font-medium">Expires In:</span> ${whois.days_until_expiration || 'N/A'} days</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg mb-3">Registrant</h3>
+                        <div class="space-y-2">
+                            <p><span class="font-medium">Organization:</span> ${whois.registrant?.organization || 'N/A'}</p>
+                            <p><span class="font-medium">Country:</span> ${whois.registrant?.country || 'N/A'}</p>
+                            <p><span class="font-medium">Email:</span> ${whois.contacts?.registrant_email || 'N/A'}</p>
+                        </div>
+                        <h3 class="font-semibold text-lg mt-4 mb-2">Name Servers</h3>
+                        <div class="bg-gray-50 rounded p-3 max-h-32 overflow-y-auto">
+                            ${(whois.name_servers || []).map(ns => `<div class="text-sm font-mono">${ns}</div>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function displayGeolocation(geo) {
+            const container = document.getElementById('geoContent');
+            if (!geo || !geo.ip_locations) {
+                container.innerHTML = '<p class="text-gray-500">Geolocation data not available</p>';
+                return;
+            }
+
+            let html = '';
+            for (const [ip, data] of Object.entries(geo.ip_locations)) {
+                if (data.success) {
+                    html += `
+                        <div class="mb-6 border-b pb-6 last:border-0">
+                            <h3 class="font-semibold text-lg mb-3">${ip}</h3>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <h4 class="font-medium text-sm text-gray-600 mb-2">Location</h4>
+                                    <p><i class="fas fa-map-marker-alt mr-2 text-red-500"></i>${data.location.city}, ${data.location.country}</p>
+                                    <p class="text-sm text-gray-600 mt-1">Coordinates: ${data.coordinates.latitude}, ${data.coordinates.longitude}</p>
+                                    <p class="text-sm text-gray-600">Timezone: ${data.location.timezone}</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-sm text-gray-600 mb-2">Network</h4>
+                                    <p><span class="font-medium">ISP:</span> ${data.network.isp}</p>
+                                    <p class="text-sm text-gray-600">${data.network.as_number}</p>
+                                    <p class="text-sm text-gray-600">${data.network.organization}</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-sm text-gray-600 mb-2">Flags</h4>
+                                    <p><i class="fas ${data.flags.is_hosting ? 'fa-check text-green-500' : 'fa-times text-red-500'} mr-2"></i>Hosting/Datacenter</p>
+                                    <p><i class="fas ${data.flags.is_proxy ? 'fa-check text-green-500' : 'fa-times text-red-500'} mr-2"></i>Proxy/VPN</p>
+                                    <p><i class="fas ${data.flags.is_mobile ? 'fa-check text-green-500' : 'fa-times text-red-500'} mr-2"></i>Mobile</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            container.innerHTML = html || '<p class="text-gray-500">No geolocation data available</p>';
+        }
+
+        function displaySSL(ssl, analysis) {
+            const container = document.getElementById('sslContent');
+            if (!ssl || !ssl.success) {
+                container.innerHTML = '<p class="text-gray-500">SSL certificate not available for this target</p>';
+                return;
+            }
+
+            const cert = ssl.certificate;
+            const html = `
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-semibold text-lg mb-3">Certificate Info</h3>
+                        <div class="space-y-2">
+                            <p><span class="font-medium">Common Name:</span> ${cert.subject.commonName}</p>
+                            <p><span class="font-medium">Issuer:</span> ${cert.issuer.organizationName}</p>
+                            <p><span class="font-medium">Valid From:</span> ${new Date(cert.valid_from).toLocaleDateString()}</p>
+                            <p><span class="font-medium">Valid Until:</span> ${new Date(cert.valid_until).toLocaleDateString()}</p>
+                            <p><span class="font-medium">Days Remaining:</span> ${cert.days_until_expiration} days</p>
+                            <p><span class="font-medium">SANs:</span> ${cert.san_count} domains</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg mb-3">Security Analysis</h3>
+                        <div class="space-y-2">
+                            <p><span class="font-medium">Security Score:</span> 
+                                <span class="text-2xl font-bold">${analysis?.security_score || 'N/A'}/100</span>
+                            </p>
+                            <p><span class="font-medium">Risk Level:</span> 
+                                <span class="badge-${analysis?.risk_level} text-white px-2 py-1 rounded text-sm">${analysis?.risk_level?.toUpperCase()}</span>
+                            </p>
+                            <p><span class="font-medium">Protocol:</span> ${ssl.ssl_version}</p>
+                            <p><span class="font-medium">Key Type:</span> ${cert.key_type} ${cert.key_size}-bit</p>
+                            <p><span class="font-medium">Cipher:</span> ${ssl.cipher_suite.name}</p>
+                        </div>
+                        ${analysis?.issues?.length > 0 ? `
+                            <div class="mt-4">
+                                <h4 class="font-medium text-sm mb-2">Issues:</h4>
+                                <ul class="list-disc list-inside text-sm">
+                                    ${analysis.issues.map(issue => `<li>${issue}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active', 'border-purple-500', 'text-purple-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+            
+            // Add active class to clicked button
+            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            activeBtn.classList.add('active', 'border-purple-500', 'text-purple-600');
+            activeBtn.classList.remove('border-transparent', 'text-gray-500');
+        }
+    </script>
+</body>
+</html>
