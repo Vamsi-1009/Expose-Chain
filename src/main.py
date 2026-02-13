@@ -52,18 +52,18 @@ if __name__ == "__main__":
     import uvicorn
     
     print(f"""
-    ╔══════════════════════════════════════════════════════════╗
-    ║                                                          ║
-    ║               🛡️  ExposeChain v{settings.VERSION}                  ║
-    ║                                                          ║
-    ║     AI-Powered Attack Surface & Threat Intelligence      ║
-    ║                                                          ║
-    ╚══════════════════════════════════════════════════════════╝
-    
-    🚀 Starting server...
-    🌐 Web Interface: http://{settings.HOST}:{settings.PORT}/
-    📍 API Docs: http://{settings.HOST}:{settings.PORT}/docs
-    🔗 Health Check: http://{settings.HOST}:{settings.PORT}/health
+    ==========================================================
+    |                                                          |
+    |              ExposeChain v{settings.VERSION}                       |
+    |                                                          |
+    |     AI-Powered Attack Surface & Threat Intelligence      |
+    |                                                          |
+    ==========================================================
+
+    Starting server...
+    Web Interface: http://{settings.HOST}:{settings.PORT}/
+    API Docs:      http://{settings.HOST}:{settings.PORT}/docs
+    Health Check:  http://{settings.HOST}:{settings.PORT}/health
     """)
     
     uvicorn.run(

@@ -3,465 +3,867 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExposeChain - AI-Powered Threat Intelligence</title>
+    <title>ExposeChain - Threat Intelligence Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            green: '#00ff88',
+                            cyan: '#00d4ff',
+                            blue: '#4f8fff',
+                            purple: '#a855f7',
+                            red: '#ff3366',
+                            yellow: '#ffcc00',
+                            orange: '#ff8c00',
+                        },
+                        surface: {
+                            900: '#08090e',
+                            800: '#0c0e16',
+                            700: '#10131d',
+                            600: '#151924',
+                            500: '#1a1f2e',
+                            400: '#222838',
+                            300: '#2d3548',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        * { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .display-font { font-family: 'Orbitron', sans-serif; }
+
+        body {
+            background: #08090e;
+            color: #a0aec0;
+            min-height: 100vh;
         }
-        .scan-result {
-            animation: fadeIn 0.5s ease-in;
+
+        /* Ambient background */
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(ellipse 800px 400px at 20% 10%, rgba(0, 255, 136, 0.03) 0%, transparent 70%),
+                radial-gradient(ellipse 600px 400px at 80% 50%, rgba(0, 212, 255, 0.025) 0%, transparent 70%),
+                radial-gradient(ellipse 500px 300px at 50% 90%, rgba(168, 85, 247, 0.02) 0%, transparent 70%);
         }
-        @keyframes fadeIn {
+
+        /* Subtle grid pattern */
+        .grid-pattern {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            opacity: 0.025;
+            background-image:
+                linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* Glass card */
+        .glass-card {
+            background: linear-gradient(135deg, rgba(16, 19, 29, 0.8), rgba(12, 14, 22, 0.9));
+            border: 1px solid rgba(45, 53, 72, 0.5);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(0, 255, 136, 0.15);
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.03), 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Stat card */
+        .stat-card {
+            background: linear-gradient(135deg, rgba(16, 19, 29, 0.9), rgba(12, 14, 22, 0.95));
+            border: 1px solid rgba(45, 53, 72, 0.4);
+            border-radius: 14px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-color, #00ff88), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .stat-card:hover::after {
+            opacity: 1;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 255, 136, 0.2);
+        }
+
+        /* Terminal block */
+        .terminal-block {
+            background: rgba(8, 9, 14, 0.8);
+            border: 1px solid rgba(45, 53, 72, 0.3);
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.9;
+        }
+        .terminal-block .t-dim { color: #4a5568; }
+        .terminal-block .t-green { color: #00ff88; }
+        .terminal-block .t-cyan { color: #00d4ff; }
+        .terminal-block .t-yellow { color: #ffcc00; }
+        .terminal-block .t-red { color: #ff3366; }
+        .terminal-block .t-purple { color: #a855f7; }
+        .terminal-block .t-white { color: #e2e8f0; }
+
+        /* Search input */
+        .search-input {
+            background: rgba(8, 9, 14, 0.6);
+            border: 1px solid rgba(45, 53, 72, 0.5);
+            color: #e2e8f0;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.08), 0 0 20px rgba(0, 255, 136, 0.06);
+        }
+        .search-input::placeholder { color: #3a4258; }
+
+        /* Select */
+        .cyber-select {
+            background: rgba(8, 9, 14, 0.6);
+            border: 1px solid rgba(45, 53, 72, 0.5);
+            color: #a0aec0;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+        }
+        .cyber-select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.08);
+        }
+
+        /* Execute button */
+        .exec-btn {
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            color: #08090e;
+            font-weight: 700;
+            border-radius: 12px;
+            letter-spacing: 1.5px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .exec-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        .exec-btn:hover::before { transform: translateX(100%); }
+        .exec-btn:hover {
+            box-shadow: 0 4px 25px rgba(0, 255, 136, 0.3), 0 0 60px rgba(0, 255, 136, 0.08);
+            transform: translateY(-1px);
+        }
+        .exec-btn:active { transform: translateY(0); }
+        .exec-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 2px;
+            background: rgba(8, 9, 14, 0.5);
+            border-radius: 12px;
+            padding: 4px;
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            background: transparent;
+        }
+        .nav-tab:hover { color: #a0aec0; background: rgba(255,255,255,0.03); }
+        .nav-tab.active {
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.08);
+            box-shadow: inset 0 0 20px rgba(0, 255, 136, 0.03);
+        }
+
+        /* Badges */
+        .badge-low { background: rgba(0, 255, 136, 0.1); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.25); }
+        .badge-medium { background: rgba(255, 204, 0, 0.1); color: #ffcc00; border: 1px solid rgba(255, 204, 0, 0.25); }
+        .badge-high { background: rgba(255, 51, 102, 0.1); color: #ff3366; border: 1px solid rgba(255, 51, 102, 0.25); }
+        .badge-critical { background: rgba(255, 51, 102, 0.2); color: #ff5577; border: 1px solid rgba(255, 51, 102, 0.4); }
+        .badge-unknown { background: rgba(160, 174, 192, 0.1); color: #a0aec0; border: 1px solid rgba(160, 174, 192, 0.25); }
+
+        /* Record chip */
+        .record-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 1px;
+            background: rgba(0, 212, 255, 0.08);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        /* Risk gauge */
+        .risk-gauge {
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(45, 53, 72, 0.3);
+            overflow: hidden;
+        }
+        .risk-gauge-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s ease;
+        }
+
+        /* Divider */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(45, 53, 72, 0.5), transparent);
+            margin: 0;
+        }
+
+        /* Animations */
+        @keyframes slideUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .loading {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+        .animate-in { animation: slideUp 0.5s ease-out forwards; }
+        .delay-1 { animation-delay: 0.1s; opacity: 0; }
+        .delay-2 { animation-delay: 0.2s; opacity: 0; }
+        .delay-3 { animation-delay: 0.3s; opacity: 0; }
+        .delay-4 { animation-delay: 0.4s; opacity: 0; }
+
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+        @keyframes typing-dots {
+            0% { content: '.'; }
+            33% { content: '..'; }
+            66% { content: '...'; }
+        }
+        .typing-dots::after { content: ''; animation: typing-dots 1.5s infinite; }
+
+        .shake { animation: shake 0.4s ease; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-3px); }
+        }
+
+        /* Status dot */
+        .status-dot {
+            width: 8px; height: 8px;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+            background: #00ff88;
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+            animation: pulse-soft 2s ease-in-out infinite;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(45, 53, 72, 0.5); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 255, 136, 0.2); }
+
+        /* Section label */
+        .section-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #4a5568;
         }
-        .badge-low { background: #10b981; }
-        .badge-medium { background: #f59e0b; }
-        .badge-high { background: #ef4444; }
-        .badge-critical { background: #dc2626; }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Header -->
-    <div class="gradient-bg text-white py-8 shadow-lg">
-        <div class="container mx-auto px-4">
+<body>
+    <div class="ambient-bg"></div>
+    <div class="grid-pattern"></div>
+
+    <!-- ===== HEADER ===== -->
+    <header class="border-b" style="border-color: rgba(45,53,72,0.3); background: rgba(8,9,14,0.7); backdrop-filter: blur(20px);">
+        <div class="max-w-7xl mx-auto px-6 py-5">
             <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-4xl font-bold flex items-center">
-                        <i class="fas fa-shield-alt mr-3"></i>
-                        ExposeChain
-                    </h1>
-                    <p class="text-purple-100 mt-2">AI-Powered Attack Surface & Threat Intelligence Platform</p>
+                <div class="flex items-center gap-4">
+                    <!-- Logo icon -->
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,212,255,0.15)); border: 1px solid rgba(0,255,136,0.2);">
+                        <i class="fas fa-shield-alt text-lg" style="color: #00ff88;"></i>
+                    </div>
+                    <div>
+                        <h1 class="display-font text-xl font-bold tracking-wider" style="color: #e2e8f0;">
+                            EXPOSE<span style="color: #00ff88;">CHAIN</span>
+                        </h1>
+                        <p class="text-xs mt-0.5" style="color: #3a4258; letter-spacing: 2px;">THREAT INTELLIGENCE PLATFORM</p>
+                    </div>
                 </div>
-                <div class="text-right">
-                    <div class="text-sm text-purple-200">Version 1.0.0</div>
-                    <div class="text-xs text-purple-300 mt-1">by Vamsi Krishna</div>
+                <div class="flex items-center gap-6">
+                    <div class="hidden md:flex items-center gap-2">
+                        <div class="status-dot"></div>
+                        <span class="mono text-xs" style="color: #3a4a5c;">SYSTEM ONLINE</span>
+                    </div>
+                    <div class="text-right hidden md:block">
+                        <div class="mono text-xs" style="color: #2d3548;">v1.0.0</div>
+                        <div class="text-xs" style="color: #2d3548;">by <span style="color: #4a5568;">Vamsi Krishna</span></div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- Main Content -->
-    <div class="container mx-auto px-4 py-8">
-        <!-- Search Box -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex gap-4">
-                <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-search mr-2"></i>Enter Domain or IP Address
-                    </label>
-                    <input 
-                        type="text" 
-                        id="targetInput" 
-                        placeholder="e.g., google.com or 8.8.8.8"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+    <!-- ===== MAIN ===== -->
+    <main class="max-w-7xl mx-auto px-6 py-10">
+
+        <!-- Search Section -->
+        <div class="glass-card p-8 mb-10">
+            <div class="flex items-center gap-2 mb-5">
+                <span class="section-label">Target Analysis</span>
+                <div class="flex-1 section-divider"></div>
+            </div>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1 relative">
+                    <div class="absolute left-4 top-1/2 -translate-y-1/2 mono text-sm" style="color: #2d3548;">
+                        <i class="fas fa-terminal"></i>
+                    </div>
+                    <input
+                        type="text"
+                        id="targetInput"
+                        placeholder="Enter domain name  (e.g. google.com)"
+                        class="search-input w-full pl-12 pr-4 py-4 text-sm"
                         onkeypress="if(event.key==='Enter') startScan()"
+                        autocomplete="off"
+                        spellcheck="false"
                     >
                 </div>
-                <div class="w-48">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Scan Type</label>
-                    <select id="scanType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                        <option value="quick">Quick Scan</option>
-                        <option value="full">Full Scan</option>
-                    </select>
+                <select id="scanType" class="cyber-select px-5 py-4 text-xs md:w-44">
+                    <option value="quick">QUICK SCAN</option>
+                    <option value="full">FULL SCAN</option>
+                </select>
+                <button onclick="startScan()" id="scanButton" class="exec-btn px-8 py-4 text-xs uppercase flex items-center justify-center gap-2">
+                    <i class="fas fa-bolt"></i>
+                    <span>Execute</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loadingSection" class="hidden glass-card p-10 mb-10">
+            <div class="flex flex-col items-center">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="status-dot"></div>
+                    <span class="display-font text-sm font-semibold tracking-widest" style="color: #00ff88;">SCANNING TARGET</span>
                 </div>
-                <div class="flex items-end">
-                    <button 
-                        onclick="startScan()" 
-                        id="scanButton"
-                        class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-200 flex items-center"
-                    >
-                        <i class="fas fa-radar mr-2"></i>
-                        Scan Now
-                    </button>
+                <div class="terminal-block p-5 w-full max-w-xl" id="loadingTerminal">
+                    <div class="t-green">[*] Initializing scan module<span class="typing-dots"></span></div>
                 </div>
             </div>
         </div>
 
-        <!-- Loading Indicator -->
-        <div id="loadingSection" class="hidden bg-white rounded-lg shadow-md p-8 mb-8 text-center">
-            <div class="loading mx-auto mb-4"></div>
-            <p class="text-gray-600 font-medium">Scanning target... Please wait</p>
-            <p class="text-sm text-gray-500 mt-2">Performing DNS, WHOIS, Geolocation, and SSL analysis</p>
+        <!-- Error -->
+        <div id="errorSection" class="hidden glass-card p-6 mb-10" style="border-color: rgba(255,51,102,0.2);">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(255,51,102,0.1);">
+                    <i class="fas fa-times" style="color: #ff3366;"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold" style="color: #ff3366;">Scan Failed</p>
+                    <p class="text-xs mt-1" style="color: #4a5568;" id="errorMessage"></p>
+                </div>
+            </div>
         </div>
 
-        <!-- Results Section -->
-        <div id="resultsSection" class="hidden scan-result">
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600">Target Type</p>
-                            <p class="text-2xl font-bold text-gray-800" id="targetType">-</p>
-                        </div>
-                        <i class="fas fa-bullseye text-4xl text-purple-500"></i>
+        <!-- ===== RESULTS ===== -->
+        <div id="resultsSection" class="hidden">
+
+            <!-- Target Info Bar -->
+            <div class="flex items-center gap-3 mb-8 animate-in">
+                <div class="w-2 h-2 rounded-full" style="background: #00ff88;"></div>
+                <span class="mono text-xs" style="color: #4a5568;">TARGET</span>
+                <span class="mono text-sm font-semibold" style="color: #00ff88;" id="targetDisplay"></span>
+                <span class="mono text-xs px-2 py-0.5 rounded-md" style="background: rgba(0,255,136,0.06); color: #00ff88; border: 1px solid rgba(0,255,136,0.15);" id="scanTypeDisplay"></span>
+                <div class="flex-1"></div>
+                <span class="mono text-xs" style="color: #2d3548;"><i class="far fa-clock mr-1"></i><span id="scanTime"></span></span>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="stat-card p-5 animate-in delay-1" style="--accent-color: #00d4ff;">
+                    <p class="section-label mb-2">Target Type</p>
+                    <p class="display-font text-lg font-bold" style="color: #00d4ff;" id="targetType">-</p>
+                </div>
+                <div class="stat-card p-5 animate-in delay-2" style="--accent-color: #ffcc00;">
+                    <p class="section-label mb-2">Risk Level</p>
+                    <p class="text-lg font-bold" id="riskLevel">-</p>
+                </div>
+                <div class="stat-card p-5 animate-in delay-3" style="--accent-color: #00ff88;">
+                    <p class="section-label mb-2">SSL Score</p>
+                    <p class="display-font text-lg font-bold" style="color: #00ff88;" id="sslScore">-</p>
+                </div>
+                <div class="stat-card p-5 animate-in delay-4" style="--accent-color: #a855f7;">
+                    <p class="section-label mb-2">IPs Found</p>
+                    <p class="display-font text-lg font-bold" style="color: #a855f7;" id="ipCount">-</p>
+                </div>
+            </div>
+
+            <!-- Threat Assessment -->
+            <div class="glass-card p-8 mb-8 animate-in delay-2" id="riskPanel">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: rgba(255,204,0,0.08);">
+                        <i class="fas fa-shield-alt text-sm" style="color: #ffcc00;"></i>
+                    </div>
+                    <span class="text-sm font-semibold" style="color: #e2e8f0;">Threat Assessment</span>
+                    <div class="flex-1"></div>
+                    <span class="text-xs px-3 py-1 rounded-lg font-semibold mono" id="overallRiskBadge">-</span>
+                </div>
+
+                <!-- Risk Gauge -->
+                <div class="mb-8">
+                    <div class="flex justify-between mb-2">
+                        <span class="section-label">Risk Score</span>
+                        <span class="mono text-xs font-bold" id="riskScoreText" style="color: #00ff88;">0 / 100</span>
+                    </div>
+                    <div class="risk-gauge">
+                        <div class="risk-gauge-fill" id="riskScoreBar" style="width: 0%; background: #00ff88;"></div>
+                    </div>
+                    <div class="flex justify-between mt-1.5">
+                        <span class="text-xs" style="color: #1a1f2e;">Safe</span>
+                        <span class="text-xs" style="color: #1a1f2e;">Critical</span>
                     </div>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600">Risk Level</p>
-                            <p class="text-2xl font-bold" id="riskLevel">-</p>
+
+                <!-- Risk Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="terminal-block p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="fas fa-globe text-xs" style="color: #00d4ff;"></i>
+                            <span class="section-label" style="color: #00d4ff;">Domain Risk</span>
                         </div>
-                        <i class="fas fa-exclamation-triangle text-4xl text-yellow-500"></i>
+                        <div id="domainRiskFactors" class="space-y-1"><span class="t-dim">Analyzing...</span></div>
                     </div>
-                </div>
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600">SSL Score</p>
-                            <p class="text-2xl font-bold text-gray-800" id="sslScore">-</p>
+                    <div class="terminal-block p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="fas fa-lock text-xs" style="color: #00ff88;"></i>
+                            <span class="section-label" style="color: #00ff88;">SSL / TLS</span>
                         </div>
-                        <i class="fas fa-lock text-4xl text-green-500"></i>
+                        <div id="sslRiskFactors" class="space-y-1"><span class="t-dim">Analyzing...</span></div>
                     </div>
-                </div>
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600">IPs Found</p>
-                            <p class="text-2xl font-bold text-gray-800" id="ipCount">-</p>
+                    <div class="terminal-block p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="fas fa-server text-xs" style="color: #a855f7;"></i>
+                            <span class="section-label" style="color: #a855f7;">Infrastructure</span>
                         </div>
-                        <i class="fas fa-network-wired text-4xl text-blue-500"></i>
+                        <div id="hostingRiskFactors" class="space-y-1"><span class="t-dim">Analyzing...</span></div>
+                    </div>
+                    <div class="terminal-block p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="fas fa-clipboard-check text-xs" style="color: #ffcc00;"></i>
+                            <span class="section-label" style="color: #ffcc00;">Recommendations</span>
+                        </div>
+                        <div id="riskRecommendations" class="space-y-1"><span class="t-dim">Analyzing...</span></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Detailed Results Tabs -->
-            <div class="bg-white rounded-lg shadow-md">
-                <div class="border-b border-gray-200">
-                    <nav class="flex -mb-px">
-                        <button onclick="showTab('dns')" class="tab-button active px-6 py-4 border-b-2 font-medium text-sm" data-tab="dns">
-                            <i class="fas fa-server mr-2"></i>DNS Records
+            <!-- Detailed Tabs -->
+            <div class="glass-card overflow-hidden animate-in delay-3">
+                <div class="p-4 pb-0">
+                    <div class="nav-tabs">
+                        <button onclick="showTab('dns')" class="nav-tab active" data-tab="dns">
+                            <i class="fas fa-server mr-2"></i>DNS
                         </button>
-                        <button onclick="showTab('whois')" class="tab-button px-6 py-4 border-b-2 font-medium text-sm" data-tab="whois">
-                            <i class="fas fa-file-alt mr-2"></i>WHOIS Data
+                        <button onclick="showTab('whois')" class="nav-tab" data-tab="whois">
+                            <i class="fas fa-file-alt mr-2"></i>WHOIS
                         </button>
-                        <button onclick="showTab('geo')" class="tab-button px-6 py-4 border-b-2 font-medium text-sm" data-tab="geo">
-                            <i class="fas fa-globe mr-2"></i>Geolocation
+                        <button onclick="showTab('geo')" class="nav-tab" data-tab="geo">
+                            <i class="fas fa-map-marker-alt mr-2"></i>GEO
                         </button>
-                        <button onclick="showTab('ssl')" class="tab-button px-6 py-4 border-b-2 font-medium text-sm" data-tab="ssl">
-                            <i class="fas fa-shield-alt mr-2"></i>SSL Certificate
+                        <button onclick="showTab('ssl')" class="nav-tab" data-tab="ssl">
+                            <i class="fas fa-shield-alt mr-2"></i>SSL
                         </button>
-                        <button onclick="showTab('raw')" class="tab-button px-6 py-4 border-b-2 font-medium text-sm" data-tab="raw">
-                            <i class="fas fa-code mr-2"></i>Raw JSON
-                        </button>
-                    </nav>
+                    </div>
                 </div>
-
-                <div class="p-6">
-                    <!-- DNS Tab -->
-                    <div id="dnsTab" class="tab-content">
-                        <div id="dnsContent"></div>
-                    </div>
-
-                    <!-- WHOIS Tab -->
-                    <div id="whoisTab" class="tab-content hidden">
-                        <div id="whoisContent"></div>
-                    </div>
-
-                    <!-- Geolocation Tab -->
-                    <div id="geoTab" class="tab-content hidden">
-                        <div id="geoContent"></div>
-                    </div>
-
-                    <!-- SSL Tab -->
-                    <div id="sslTab" class="tab-content hidden">
-                        <div id="sslContent"></div>
-                    </div>
-
-                    <!-- Raw JSON Tab -->
-                    <div id="rawTab" class="tab-content hidden">
-                        <pre id="rawContent" class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96 text-sm"></pre>
-                    </div>
+                <div class="p-6 pt-5">
+                    <div id="dnsTab" class="tab-content"><div id="dnsContent"></div></div>
+                    <div id="whoisTab" class="tab-content hidden"><div id="whoisContent"></div></div>
+                    <div id="geoTab" class="tab-content hidden"><div id="geoContent"></div></div>
+                    <div id="sslTab" class="tab-content hidden"><div id="sslContent"></div></div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-6 mt-12">
-        <div class="container mx-auto px-4 text-center">
-            <p>&copy; 2026 ExposeChain. Built with ❤️ by Vamsi Krishna</p>
-            <p class="text-sm text-gray-400 mt-2">AI-Powered Cybersecurity Intelligence Platform</p>
+    <!-- ===== FOOTER ===== -->
+    <footer class="border-t mt-20 py-8" style="border-color: rgba(45,53,72,0.2);">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-6 h-6 rounded-lg flex items-center justify-center" style="background: rgba(0,255,136,0.06);">
+                    <i class="fas fa-shield-alt text-xs" style="color: #00ff88;"></i>
+                </div>
+                <span class="text-xs" style="color: #2d3548;">ExposeChain v1.0.0</span>
+            </div>
+            <p class="text-xs" style="color: #1a1f2e;">
+                Built by <span style="color: #2d3548;">Vamsi Krishna</span> &middot; AI-Powered Cybersecurity Intelligence
+            </p>
         </div>
     </footer>
 
+    <!-- ===== SCRIPTS ===== -->
     <script>
         let scanData = null;
+        let loadingInterval = null;
+
+        const loadingMessages = [
+            '[*] Initializing scan module',
+            '[*] Resolving DNS records',
+            '[*] Querying WHOIS database',
+            '[*] Mapping geolocation data',
+            '[*] Analyzing SSL certificate',
+            '[*] Running threat assessment',
+            '[*] Compiling intelligence report'
+        ];
+
+        function simulateLoading() {
+            const terminal = document.getElementById('loadingTerminal');
+            terminal.innerHTML = '';
+            let i = 0;
+            function addLine() {
+                if (i < loadingMessages.length) {
+                    const line = document.createElement('div');
+                    line.className = 't-green';
+                    line.innerHTML = loadingMessages[i] + '<span class="typing-dots"></span>';
+                    terminal.appendChild(line);
+                    terminal.scrollTop = terminal.scrollHeight;
+                    const lines = terminal.querySelectorAll('div');
+                    if (lines.length > 1) {
+                        const prev = lines[lines.length - 2];
+                        prev.innerHTML = prev.innerHTML.replace('<span class="typing-dots"></span>', ' <span class="t-cyan">[OK]</span>');
+                    }
+                    i++;
+                }
+            }
+            addLine();
+            loadingInterval = setInterval(addLine, 1100);
+        }
 
         function startScan() {
             const target = document.getElementById('targetInput').value.trim();
             const scanType = document.getElementById('scanType').value;
-
             if (!target) {
-                alert('Please enter a domain or IP address');
+                const el = document.getElementById('targetInput');
+                el.classList.add('shake');
+                el.style.borderColor = '#ff3366';
+                setTimeout(() => { el.classList.remove('shake'); el.style.borderColor = ''; }, 500);
                 return;
             }
-
-            // Show loading, hide results
             document.getElementById('loadingSection').classList.remove('hidden');
             document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('errorSection').classList.add('hidden');
+            const btn = document.getElementById('scanButton');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Scanning</span>';
+            simulateLoading();
 
-            // Make API call
             fetch('/api/scan', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    target: target,
-                    scan_type: scanType
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target, scan_type: scanType })
             })
-            .then(response => response.json())
+            .then(r => r.ok ? r.json() : r.json().then(e => { throw new Error(e.detail || 'Scan failed'); }))
             .then(data => {
                 scanData = data;
-                displayResults(data);
-                document.getElementById('loadingSection').classList.add('hidden');
-                document.getElementById('resultsSection').classList.remove('hidden');
+                clearInterval(loadingInterval);
+                const terminal = document.getElementById('loadingTerminal');
+                const lines = terminal.querySelectorAll('div');
+                if (lines.length > 0) {
+                    const last = lines[lines.length - 1];
+                    last.innerHTML = last.innerHTML.replace('<span class="typing-dots"></span>', ' <span class="t-cyan">[OK]</span>');
+                }
+                const done = document.createElement('div');
+                done.className = 't-cyan';
+                done.style.fontWeight = '600';
+                done.textContent = '[+] SCAN COMPLETE';
+                terminal.appendChild(done);
+                setTimeout(() => {
+                    displayResults(data);
+                    document.getElementById('loadingSection').classList.add('hidden');
+                    document.getElementById('resultsSection').classList.remove('hidden');
+                }, 700);
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('Scan failed: ' + error.message);
+                clearInterval(loadingInterval);
                 document.getElementById('loadingSection').classList.add('hidden');
+                document.getElementById('errorSection').classList.remove('hidden');
+                document.getElementById('errorMessage').textContent = error.message;
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-bolt"></i> <span>Execute</span>';
             });
         }
 
         function displayResults(data) {
-            // Update summary cards
-            document.getElementById('targetType').textContent = data.target_type.toUpperCase();
-            
+            document.getElementById('targetDisplay').textContent = data.target.toUpperCase();
+            document.getElementById('scanTypeDisplay').textContent = data.data.scan_type.toUpperCase();
+            document.getElementById('scanTime').textContent = new Date().toLocaleTimeString();
+            document.getElementById('targetType').textContent = 'DOMAIN';
+
             const riskLevel = data.data.domain_analysis?.risk_level || 'unknown';
-            const riskElement = document.getElementById('riskLevel');
-            riskElement.textContent = riskLevel.toUpperCase();
-            riskElement.className = `text-2xl font-bold badge-${riskLevel} text-white px-3 py-1 rounded`;
-            
-            document.getElementById('sslScore').textContent = data.data.ssl_security_analysis?.security_score || 'N/A';
+            const riskEl = document.getElementById('riskLevel');
+            riskEl.textContent = riskLevel.toUpperCase();
+            riskEl.className = `display-font text-lg font-bold badge-${riskLevel} px-3 py-1 rounded-lg text-xs`;
+
+            const sslScore = data.data.ssl_security_analysis?.security_score;
+            const sslEl = document.getElementById('sslScore');
+            sslEl.textContent = sslScore !== undefined ? sslScore + '/100' : 'N/A';
+            if (sslScore >= 85) sslEl.style.color = '#00ff88';
+            else if (sslScore >= 70) sslEl.style.color = '#ffcc00';
+            else sslEl.style.color = '#ff3366';
+
             document.getElementById('ipCount').textContent = data.data.geolocation?.total_ips || '0';
 
-            // Display DNS records
+            displayRiskAssessment(data);
             displayDNS(data.data.dns_lookup);
-            
-            // Display WHOIS
             displayWHOIS(data.data.whois_lookup);
-            
-            // Display Geolocation
             displayGeolocation(data.data.geolocation);
-            
-            // Display SSL
             displaySSL(data.data.ssl_certificate, data.data.ssl_security_analysis);
-            
-            // Display raw JSON
-            document.getElementById('rawContent').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function displayRiskAssessment(data) {
+            const da = data.data.domain_analysis || {};
+            const sa = data.data.ssl_security_analysis || {};
+            const ha = data.data.hosting_analysis || {};
+            const sc = data.data.ssl_certificate || {};
+            const wd = data.data.whois_lookup || {};
+            let riskScore = 0;
+
+            // Domain
+            let dh = '';
+            (da.insights || []).forEach(ins => {
+                let ic = 'fa-info-circle', cl = 't-cyan';
+                if (/expired|very new/i.test(ins)) { ic = 'fa-exclamation-circle'; cl = 't-red'; riskScore += 25; }
+                else if (/soon|less than/i.test(ins)) { ic = 'fa-exclamation-triangle'; cl = 't-yellow'; riskScore += 10; }
+                else if (/well-established|good/i.test(ins)) { ic = 'fa-check-circle'; cl = 't-green'; }
+                else if (/privacy/i.test(ins)) { ic = 'fa-user-secret'; cl = 't-yellow'; riskScore += 5; }
+                dh += `<div><i class="fas ${ic} mr-2 ${cl}"></i><span class="${cl}">${ins}</span></div>`;
+            });
+            const age = wd.domain_age_days;
+            if (age != null) {
+                if (age > 365) dh += `<div><i class="fas fa-check-circle mr-2 t-green"></i><span class="t-green">Domain age: ${Math.floor(age/365)}y (${age}d)</span></div>`;
+                else { dh += `<div><i class="fas fa-exclamation-triangle mr-2 t-yellow"></i><span class="t-yellow">Domain age: ${age}d</span></div>`; if (age < 90) riskScore += 15; }
+            }
+            if (da.status === 'active') dh += `<div><i class="fas fa-check-circle mr-2 t-green"></i><span class="t-green">Status: ACTIVE</span></div>`;
+            else if (da.status === 'expired') { dh += `<div><i class="fas fa-times-circle mr-2 t-red"></i><span class="t-red">Status: EXPIRED</span></div>`; riskScore += 30; }
+            document.getElementById('domainRiskFactors').innerHTML = dh || '<span class="t-dim">No data</span>';
+
+            // SSL
+            let sh = '';
+            const ss = sa.security_score;
+            if (ss !== undefined) {
+                const c = ss >= 85 ? 't-green' : ss >= 70 ? 't-yellow' : 't-red';
+                sh += `<div><span class="t-dim">Score:</span> <span class="${c}" style="font-weight:700;">${ss}/100</span></div>`;
+                if (ss < 85) riskScore += (100 - ss) * 0.3;
+            }
+            (sa.issues || []).forEach(iss => {
+                if (iss === 'No major issues detected') sh += `<div><i class="fas fa-check-circle mr-2 t-green"></i><span class="t-green">${iss}</span></div>`;
+                else { const cr = /expired|urgent/i.test(iss); sh += `<div><i class="fas fa-exclamation-circle mr-2 ${cr?'t-red':'t-yellow'}"></i><span class="${cr?'t-red':'t-yellow'}">${iss}</span></div>`; riskScore += cr ? 20 : 8; }
+            });
+            const sd = sa.details || {};
+            if (sd.key_strength) { const w = /weak/i.test(sd.key_strength); sh += `<div><i class="fas ${w?'fa-exclamation-triangle':'fa-key'} mr-2 ${w?'t-red':'t-cyan'}"></i><span class="${w?'t-red':'t-cyan'}">Key: ${sd.key_strength}</span></div>`; }
+            if (sd.protocol_version) { const o = ['SSLv2','SSLv3','TLSv1','TLSv1.1'].includes(sd.protocol_version); sh += `<div><i class="fas fa-shield-alt mr-2 ${o?'t-red':'t-green'}"></i><span class="${o?'t-red':'t-green'}">Protocol: ${sd.protocol_version}</span></div>`; }
+            if (!sc.success) { sh = '<div><i class="fas fa-times-circle mr-2 t-red"></i><span class="t-red">No SSL - NOT secure</span></div>'; riskScore += 30; }
+            document.getElementById('sslRiskFactors').innerHTML = sh || '<span class="t-dim">No data</span>';
+
+            // Hosting
+            let hh = '';
+            if (ha && Object.keys(ha).length) {
+                if (ha.deployment_pattern) { const cdn = /cdn|distributed/i.test(ha.deployment_pattern); hh += `<div><i class="fas ${cdn?'fa-check-circle':'fa-info-circle'} mr-2 ${cdn?'t-green':'t-purple'}"></i><span class="${cdn?'t-green':'t-purple'}">${ha.deployment_pattern}</span></div>`; }
+                (ha.insights || []).forEach(i => { hh += `<div><i class="fas fa-info-circle mr-2 t-purple"></i><span class="t-purple">${i}</span></div>`; });
+                if (ha.unique_countries) hh += `<div><i class="fas fa-globe mr-2 t-cyan"></i><span class="t-cyan">Countries: ${ha.unique_countries}</span></div>`;
+                if (ha.unique_isps) hh += `<div><i class="fas fa-network-wired mr-2 t-cyan"></i><span class="t-cyan">ISPs: ${ha.unique_isps}</span></div>`;
+            }
+            const gd = data.data.geolocation;
+            if (gd?.ip_locations) { for (const [ip,l] of Object.entries(gd.ip_locations)) { if (l.success?.flags) { if (l.flags?.is_proxy) { hh += `<div><i class="fas fa-exclamation-triangle mr-2 t-red"></i><span class="t-red">Proxy/VPN: ${ip}</span></div>`; riskScore += 15; } if (l.flags?.is_hosting) hh += `<div><i class="fas fa-check-circle mr-2 t-green"></i><span class="t-green">Datacenter: ${ip}</span></div>`; } } }
+            document.getElementById('hostingRiskFactors').innerHTML = hh || '<span class="t-dim">No data</span>';
+
+            // Recommendations
+            const recs = [];
+            if (da.status === 'expired') recs.push({t:'Domain expired - do NOT trust',s:'d'});
+            if (wd.days_until_expiration && wd.days_until_expiration < 90 && wd.days_until_expiration > 0) recs.push({t:'Expires soon - verify ownership',s:'w'});
+            if (age && age < 90) recs.push({t:'New domain - exercise caution',s:'w'});
+            if (!sc.success) recs.push({t:'No SSL - avoid sensitive data',s:'d'});
+            (sa.recommendations || []).forEach(r => { if (!/secure|modern/i.test(r)) recs.push({t:r,s:'w'}); });
+            if (ss >= 85 && age > 365 && da.status === 'active') recs.push({t:'Domain is well-established and secure',s:'s'});
+            if (!recs.length) recs.push({t:'No significant risks detected',s:'s'});
+            document.getElementById('riskRecommendations').innerHTML = recs.map(r => {
+                const ic = r.s==='d'?'fa-skull-crossbones':r.s==='w'?'fa-exclamation-triangle':'fa-check-circle';
+                const cl = r.s==='d'?'t-red':r.s==='w'?'t-yellow':'t-green';
+                return `<div><i class="fas ${ic} mr-2 ${cl}"></i><span class="${cl}">${r.t}</span></div>`;
+            }).join('');
+
+            // Score
+            riskScore = Math.min(100, Math.round(riskScore));
+            let bc, rl;
+            if (riskScore <= 20) { bc = '#00ff88'; rl = 'LOW RISK'; }
+            else if (riskScore <= 45) { bc = '#ffcc00'; rl = 'MEDIUM RISK'; }
+            else if (riskScore <= 70) { bc = '#ff3366'; rl = 'HIGH RISK'; }
+            else { bc = '#ff0040'; rl = 'CRITICAL'; }
+            setTimeout(() => { document.getElementById('riskScoreBar').style.width = riskScore+'%'; document.getElementById('riskScoreBar').style.background = bc; }, 300);
+            const rt = document.getElementById('riskScoreText'); rt.textContent = `${riskScore} / 100`; rt.style.color = bc;
+            const ob = document.getElementById('overallRiskBadge'); ob.textContent = rl;
+            ob.className = `text-xs px-3 py-1 rounded-lg font-semibold mono badge-${riskScore<=20?'low':riskScore<=45?'medium':riskScore<=70?'high':'critical'}`;
         }
 
         function displayDNS(dns) {
-            const container = document.getElementById('dnsContent');
-            let html = '';
-
-            if (dns && dns.dns_records) {
-                for (const [type, records] of Object.entries(dns.dns_records)) {
-                    if (records.success) {
-                        html += `
-                            <div class="mb-6">
-                                <h3 class="text-lg font-semibold mb-3 flex items-center">
-                                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm mr-2">${type}</span>
-                                    ${records.count} record(s) - ${records.query_time_ms}ms
-                                </h3>
-                                <div class="bg-gray-50 rounded-lg p-4">
-                        `;
-                        
-                        records.records.forEach(record => {
-                            html += `<div class="mb-2 font-mono text-sm">`;
-                            if (type === 'A' || type === 'AAAA') {
-                                html += `IP: ${record.ip} (TTL: ${record.ttl}s)`;
-                            } else if (type === 'MX') {
-                                html += `Priority: ${record.priority} - ${record.mail_server}`;
-                            } else if (type === 'NS') {
-                                html += `${record.nameserver}`;
-                            } else if (type === 'TXT') {
-                                html += `${record.data}`;
-                            }
-                            html += `</div>`;
+            const c = document.getElementById('dnsContent');
+            let h = '';
+            if (dns?.dns_records) {
+                for (const [type, rec] of Object.entries(dns.dns_records)) {
+                    if (rec.success) {
+                        h += `<div class="mb-5"><div class="flex items-center gap-3 mb-2"><span class="record-chip">${type}</span><span class="text-xs" style="color:#2d3548;">${rec.count} record(s) &middot; ${rec.query_time_ms}ms</span></div><div class="terminal-block p-4">`;
+                        rec.records.forEach(r => {
+                            if (type==='A'||type==='AAAA') h += `<div><span class="t-dim">ip:</span> <span class="t-green">${r.ip}</span> <span class="t-dim">ttl:</span> <span class="t-cyan">${r.ttl}s</span></div>`;
+                            else if (type==='MX') h += `<div><span class="t-dim">pri:</span> <span class="t-yellow">${r.priority}</span> <span class="t-dim">srv:</span> <span class="t-green">${r.mail_server}</span></div>`;
+                            else if (type==='NS') h += `<div><span class="t-dim">ns:</span> <span class="t-green">${r.nameserver}</span></div>`;
+                            else if (type==='TXT') h += `<div><span class="t-dim">txt:</span> <span class="t-green" style="word-break:break-all;">${r.data}</span></div>`;
                         });
-                        
-                        html += `</div></div>`;
+                        h += `</div></div>`;
                     } else {
-                        html += `
-                            <div class="mb-4">
-                                <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">${type}</span>
-                                <span class="text-gray-500 ml-2">${records.error}</span>
-                            </div>
-                        `;
+                        h += `<div class="mb-3 flex items-center gap-2"><span class="record-chip" style="color:#ff3366;border-color:rgba(255,51,102,0.2);background:rgba(255,51,102,0.05);">${type}</span><span class="text-xs" style="color:#3a4258;">${rec.error}</span></div>`;
                     }
                 }
             }
-
-            container.innerHTML = html || '<p class="text-gray-500">No DNS data available</p>';
+            c.innerHTML = h || '<p class="text-sm" style="color:#2d3548;">No DNS records found</p>';
         }
 
-        function displayWHOIS(whois) {
-            const container = document.getElementById('whoisContent');
-            if (!whois || !whois.success) {
-                container.innerHTML = '<p class="text-gray-500">WHOIS data not available</p>';
-                return;
-            }
-
-            const html = `
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <h3 class="font-semibold text-lg mb-3">Registration Info</h3>
-                        <div class="space-y-2">
-                            <p><span class="font-medium">Registrar:</span> ${whois.registrar || 'N/A'}</p>
-                            <p><span class="font-medium">Created:</span> ${whois.creation_date || 'N/A'}</p>
-                            <p><span class="font-medium">Expires:</span> ${whois.expiration_date || 'N/A'}</p>
-                            <p><span class="font-medium">Updated:</span> ${whois.updated_date || 'N/A'}</p>
-                            <p><span class="font-medium">Domain Age:</span> ${whois.domain_age_days || 'N/A'} days</p>
-                            <p><span class="font-medium">Expires In:</span> ${whois.days_until_expiration || 'N/A'} days</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold text-lg mb-3">Registrant</h3>
-                        <div class="space-y-2">
-                            <p><span class="font-medium">Organization:</span> ${whois.registrant?.organization || 'N/A'}</p>
-                            <p><span class="font-medium">Country:</span> ${whois.registrant?.country || 'N/A'}</p>
-                            <p><span class="font-medium">Email:</span> ${whois.contacts?.registrant_email || 'N/A'}</p>
-                        </div>
-                        <h3 class="font-semibold text-lg mt-4 mb-2">Name Servers</h3>
-                        <div class="bg-gray-50 rounded p-3 max-h-32 overflow-y-auto">
-                            ${(whois.name_servers || []).map(ns => `<div class="text-sm font-mono">${ns}</div>`).join('')}
-                        </div>
+        function displayWHOIS(w) {
+            const c = document.getElementById('whoisContent');
+            if (!w?.success) { c.innerHTML = '<p class="text-sm" style="color:#2d3548;">WHOIS data not available</p>'; return; }
+            c.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="terminal-block p-5">
+                    <div class="flex items-center gap-2 mb-3"><i class="fas fa-calendar-alt text-xs" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Registration</span></div>
+                    <div><span class="t-dim">registrar :</span> <span class="t-green">${w.registrar||'N/A'}</span></div>
+                    <div><span class="t-dim">created   :</span> <span class="t-green">${w.creation_date||'N/A'}</span></div>
+                    <div><span class="t-dim">expires   :</span> <span class="t-green">${w.expiration_date||'N/A'}</span></div>
+                    <div><span class="t-dim">updated   :</span> <span class="t-green">${w.updated_date||'N/A'}</span></div>
+                    <div><span class="t-dim">age       :</span> <span class="t-cyan">${w.domain_age_days||'N/A'} days</span></div>
+                    <div><span class="t-dim">exp_in    :</span> <span class="${(w.days_until_expiration<30)?'t-red':'t-cyan'}">${w.days_until_expiration||'N/A'} days</span></div>
+                </div>
+                <div class="terminal-block p-5">
+                    <div class="flex items-center gap-2 mb-3"><i class="fas fa-user text-xs" style="color:#a855f7;"></i><span class="section-label" style="color:#a855f7;">Registrant</span></div>
+                    <div><span class="t-dim">org     :</span> <span class="t-green">${w.registrant?.organization||'N/A'}</span></div>
+                    <div><span class="t-dim">country :</span> <span class="t-green">${w.registrant?.country||'N/A'}</span></div>
+                    <div><span class="t-dim">email   :</span> <span class="t-green">${w.contacts?.registrant_email||'N/A'}</span></div>
+                    <div class="mt-3 pt-3" style="border-top:1px solid rgba(45,53,72,0.3);">
+                        <div class="flex items-center gap-2 mb-2"><i class="fas fa-dns text-xs" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Name Servers</span></div>
+                        ${(w.name_servers||[]).map(ns=>`<div><span class="t-dim">ns:</span> <span class="t-green">${ns}</span></div>`).join('')}
                     </div>
                 </div>
-            `;
-
-            container.innerHTML = html;
+            </div>`;
         }
 
         function displayGeolocation(geo) {
-            const container = document.getElementById('geoContent');
-            if (!geo || !geo.ip_locations) {
-                container.innerHTML = '<p class="text-gray-500">Geolocation data not available</p>';
-                return;
-            }
-
-            let html = '';
-            for (const [ip, data] of Object.entries(geo.ip_locations)) {
-                if (data.success) {
-                    html += `
-                        <div class="mb-6 border-b pb-6 last:border-0">
-                            <h3 class="font-semibold text-lg mb-3">${ip}</h3>
-                            <div class="grid grid-cols-3 gap-4">
-                                <div>
-                                    <h4 class="font-medium text-sm text-gray-600 mb-2">Location</h4>
-                                    <p><i class="fas fa-map-marker-alt mr-2 text-red-500"></i>${data.location.city}, ${data.location.country}</p>
-                                    <p class="text-sm text-gray-600 mt-1">Coordinates: ${data.coordinates.latitude}, ${data.coordinates.longitude}</p>
-                                    <p class="text-sm text-gray-600">Timezone: ${data.location.timezone}</p>
-                                </div>
-                                <div>
-                                    <h4 class="font-medium text-sm text-gray-600 mb-2">Network</h4>
-                                    <p><span class="font-medium">ISP:</span> ${data.network.isp}</p>
-                                    <p class="text-sm text-gray-600">${data.network.as_number}</p>
-                                    <p class="text-sm text-gray-600">${data.network.organization}</p>
-                                </div>
-                                <div>
-                                    <h4 class="font-medium text-sm text-gray-600 mb-2">Flags</h4>
-                                    <p><i class="fas ${data.flags.is_hosting ? 'fa-check text-green-500' : 'fa-times text-red-500'} mr-2"></i>Hosting/Datacenter</p>
-                                    <p><i class="fas ${data.flags.is_proxy ? 'fa-check text-green-500' : 'fa-times text-red-500'} mr-2"></i>Proxy/VPN</p>
-                                    <p><i class="fas ${data.flags.is_mobile ? 'fa-check text-green-500' : 'fa-times text-red-500'} mr-2"></i>Mobile</p>
-                                </div>
-                            </div>
+            const c = document.getElementById('geoContent');
+            if (!geo?.ip_locations) { c.innerHTML = '<p class="text-sm" style="color:#2d3548;">Geolocation data not available</p>'; return; }
+            let h = '';
+            for (const [ip, d] of Object.entries(geo.ip_locations)) {
+                if (d.success) {
+                    h += `<div class="mb-5"><div class="mb-2"><span class="record-chip">${ip}</span></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="terminal-block p-4">
+                            <div class="flex items-center gap-2 mb-2"><i class="fas fa-map-pin text-xs" style="color:#ff8c00;"></i><span class="section-label" style="color:#ff8c00;">Location</span></div>
+                            <div><span class="t-dim">city    :</span> <span class="t-green">${d.location.city}</span></div>
+                            <div><span class="t-dim">country :</span> <span class="t-green">${d.location.country}</span></div>
+                            <div><span class="t-dim">coords  :</span> <span class="t-cyan">${d.coordinates.latitude}, ${d.coordinates.longitude}</span></div>
+                            <div><span class="t-dim">tz      :</span> <span class="t-green">${d.location.timezone}</span></div>
                         </div>
-                    `;
+                        <div class="terminal-block p-4">
+                            <div class="flex items-center gap-2 mb-2"><i class="fas fa-network-wired text-xs" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Network</span></div>
+                            <div><span class="t-dim">isp  :</span> <span class="t-green">${d.network.isp}</span></div>
+                            <div><span class="t-dim">asn  :</span> <span class="t-cyan">${d.network.as_number}</span></div>
+                            <div><span class="t-dim">org  :</span> <span class="t-green">${d.network.organization}</span></div>
+                        </div>
+                        <div class="terminal-block p-4">
+                            <div class="flex items-center gap-2 mb-2"><i class="fas fa-flag text-xs" style="color:#a855f7;"></i><span class="section-label" style="color:#a855f7;">Flags</span></div>
+                            <div><span class="${d.flags.is_hosting?'t-green':'t-dim'}">[${d.flags.is_hosting?'x':' '}]</span> <span class="t-white">Hosting/DC</span></div>
+                            <div><span class="${d.flags.is_proxy?'t-red':'t-dim'}">[${d.flags.is_proxy?'x':' '}]</span> <span class="t-white">Proxy/VPN</span></div>
+                            <div><span class="${d.flags.is_mobile?'t-yellow':'t-dim'}">[${d.flags.is_mobile?'x':' '}]</span> <span class="t-white">Mobile</span></div>
+                        </div>
+                    </div></div>`;
                 }
             }
-
-            container.innerHTML = html || '<p class="text-gray-500">No geolocation data available</p>';
+            c.innerHTML = h || '<p class="text-sm" style="color:#2d3548;">No geolocation data</p>';
         }
 
-        function displaySSL(ssl, analysis) {
-            const container = document.getElementById('sslContent');
-            if (!ssl || !ssl.success) {
-                container.innerHTML = '<p class="text-gray-500">SSL certificate not available for this target</p>';
-                return;
-            }
-
-            const cert = ssl.certificate;
-            const html = `
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <h3 class="font-semibold text-lg mb-3">Certificate Info</h3>
-                        <div class="space-y-2">
-                            <p><span class="font-medium">Common Name:</span> ${cert.subject.commonName}</p>
-                            <p><span class="font-medium">Issuer:</span> ${cert.issuer.organizationName}</p>
-                            <p><span class="font-medium">Valid From:</span> ${new Date(cert.valid_from).toLocaleDateString()}</p>
-                            <p><span class="font-medium">Valid Until:</span> ${new Date(cert.valid_until).toLocaleDateString()}</p>
-                            <p><span class="font-medium">Days Remaining:</span> ${cert.days_until_expiration} days</p>
-                            <p><span class="font-medium">SANs:</span> ${cert.san_count} domains</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold text-lg mb-3">Security Analysis</h3>
-                        <div class="space-y-2">
-                            <p><span class="font-medium">Security Score:</span> 
-                                <span class="text-2xl font-bold">${analysis?.security_score || 'N/A'}/100</span>
-                            </p>
-                            <p><span class="font-medium">Risk Level:</span> 
-                                <span class="badge-${analysis?.risk_level} text-white px-2 py-1 rounded text-sm">${analysis?.risk_level?.toUpperCase()}</span>
-                            </p>
-                            <p><span class="font-medium">Protocol:</span> ${ssl.ssl_version}</p>
-                            <p><span class="font-medium">Key Type:</span> ${cert.key_type} ${cert.key_size}-bit</p>
-                            <p><span class="font-medium">Cipher:</span> ${ssl.cipher_suite.name}</p>
-                        </div>
-                        ${analysis?.issues?.length > 0 ? `
-                            <div class="mt-4">
-                                <h4 class="font-medium text-sm mb-2">Issues:</h4>
-                                <ul class="list-disc list-inside text-sm">
-                                    ${analysis.issues.map(issue => `<li>${issue}</li>`).join('')}
-                                </ul>
-                            </div>
-                        ` : ''}
-                    </div>
+        function displaySSL(ssl, an) {
+            const c = document.getElementById('sslContent');
+            if (!ssl?.success) { c.innerHTML = '<p class="text-sm" style="color:#2d3548;">SSL certificate not available</p>'; return; }
+            const ct = ssl.certificate;
+            c.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="terminal-block p-5">
+                    <div class="flex items-center gap-2 mb-3"><i class="fas fa-certificate text-xs" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Certificate</span></div>
+                    <div><span class="t-dim">cn        :</span> <span class="t-green">${ct.subject.commonName}</span></div>
+                    <div><span class="t-dim">issuer    :</span> <span class="t-green">${ct.issuer.organizationName}</span></div>
+                    <div><span class="t-dim">valid_from:</span> <span class="t-green">${new Date(ct.valid_from).toLocaleDateString()}</span></div>
+                    <div><span class="t-dim">valid_to  :</span> <span class="${ct.days_until_expiration<30?'t-red':'t-green'}">${new Date(ct.valid_until).toLocaleDateString()}</span></div>
+                    <div><span class="t-dim">remaining :</span> <span class="${ct.days_until_expiration<30?'t-red':'t-cyan'}">${ct.days_until_expiration} days</span></div>
+                    <div><span class="t-dim">san_count :</span> <span class="t-cyan">${ct.san_count} domains</span></div>
                 </div>
-            `;
-
-            container.innerHTML = html;
+                <div class="terminal-block p-5">
+                    <div class="flex items-center gap-2 mb-3"><i class="fas fa-tachometer-alt text-xs" style="color:#00ff88;"></i><span class="section-label" style="color:#00ff88;">Security</span></div>
+                    <div><span class="t-dim">score    :</span> <span class="${(an?.security_score>=85)?'t-green':(an?.security_score>=70)?'t-yellow':'t-red'}" style="font-size:16px;font-weight:700;">${an?.security_score||'N/A'}/100</span></div>
+                    <div><span class="t-dim">risk     :</span> <span class="badge-${an?.risk_level} px-2 py-0.5 rounded text-xs mono">${an?.risk_level?.toUpperCase()}</span></div>
+                    <div><span class="t-dim">protocol :</span> <span class="t-green">${ssl.ssl_version}</span></div>
+                    <div><span class="t-dim">key      :</span> <span class="t-green">${ct.key_type} ${ct.key_size}-bit</span></div>
+                    <div><span class="t-dim">cipher   :</span> <span class="t-green">${ssl.cipher_suite.name}</span></div>
+                    ${an?.issues?.length ? `<div class="mt-3 pt-3" style="border-top:1px solid rgba(45,53,72,0.3);">${an.issues.map(i=>`<div class="t-${i==='No major issues detected'?'green':'red'} text-xs">[${i==='No major issues detected'?'+':'-'}] ${i}</div>`).join('')}</div>` : ''}
+                </div>
+            </div>`;
         }
 
-        function showTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.add('hidden');
-            });
-            
-            // Remove active class from all buttons
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active', 'border-purple-500', 'text-purple-600');
-                btn.classList.add('border-transparent', 'text-gray-500');
-            });
-            
-            // Show selected tab
-            document.getElementById(tabName + 'Tab').classList.remove('hidden');
-            
-            // Add active class to clicked button
-            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
-            activeBtn.classList.add('active', 'border-purple-500', 'text-purple-600');
-            activeBtn.classList.remove('border-transparent', 'text-gray-500');
+        function showTab(name) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById(name + 'Tab').classList.remove('hidden');
+            document.querySelector(`[data-tab="${name}"]`).classList.add('active');
         }
     </script>
 </body>
