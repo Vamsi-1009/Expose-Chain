@@ -54,3 +54,4 @@ htmlcov/
 # Project specific
 reports/
 scans/
+.claude/
