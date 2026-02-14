@@ -103,24 +103,25 @@ async def scan_target(request: Request, scan_request: ScanRequest):
 
         message = f"Complete security scan finished for domain: {scan_request.target}"
 
-        # Save to database
+        # Save to Supabase database
         db = SessionLocal()
         try:
             record = ScanRecord(
                 scan_id=scan_id,
                 target=scan_request.target,
                 scan_type=scan_request.scan_type,
-                target_type=target_type,
-                success=1,
-                message=message,
-                data_json=json.dumps(scan_data, default=str),
-                ai_analysis_json=json.dumps(ai_analysis, default=str),
+                dns_results=dns_results,
+                whois_results=whois_results,
+                geolocation_results=geo_results if geo_results.get('total_ips', 0) > 0 else None,
+                ssl_results=ssl_results,
+                ai_analysis=ai_analysis,
             )
             db.add(record)
             db.commit()
-            logger.info("Scan saved: id=%s target=%s", scan_id, scan_request.target)
+            db.refresh(record)
+            logger.info("Scan saved to Supabase: id=%s target=%s", scan_id, scan_request.target)
         except Exception as db_err:
-            logger.error("Failed to save scan record: %s", db_err)
+            logger.error("Failed to save scan record to Supabase: %s", db_err)
             db.rollback()
         finally:
             db.close()
@@ -230,7 +231,8 @@ async def get_scan_history(request: Request, limit: int = 20, offset: int = 0):
                     "scan_id": r.scan_id,
                     "target": r.target,
                     "scan_type": r.scan_type,
-                    "success": bool(r.success),
+                    "risk_score": r.ai_analysis.get("overall_risk_score") if r.ai_analysis else None,
+                    "threat_level": r.ai_analysis.get("threat_level") if r.ai_analysis else None,
                     "created_at": r.created_at.isoformat() if r.created_at else None,
                 }
                 for r in records
