@@ -1,39 +1,74 @@
-# 🛡️ ExposeChain (Advanced Edition)
-### AI-Powered Attack Surface & Threat Intelligence Platform
+# 🛡️ ExposeChain
+### AI-Powered Threat Intelligence & Attack Surface Analysis Platform
 
-## 📌 Current Status: Phase 1 - Step 1 ✅
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Vamsi-1009/Expose-Chain)
 
-### Completed Features
-- ✅ Project structure setup
-- ✅ FastAPI application with health check
-- ✅ Input validation (Domain/IPv4/IPv6 detection)
-- ✅ Basic API endpoints
-- ✅ Configuration management
+## ✨ Features
+
+### Core Intelligence Capabilities
+- 🔍 **Comprehensive DNS Analysis** - Full DNS record enumeration and analysis
+- 📋 **WHOIS Intelligence** - Domain registration and ownership data
+- 🌍 **Geolocation Tracking** - IP geolocation and hosting analysis
+- 🔐 **SSL/TLS Certificate Analysis** - Certificate validation and security assessment
+- 🤖 **AI Risk Prediction** - Multi-factor threat scoring and recommendations
+
+### Technical Features
+- ⚡ **Async/Parallel Scanning** - Fast concurrent API calls
+- 🛡️ **SSRF Protection** - Prevents internal network scanning
+- 🚦 **Rate Limiting** - Protects API from abuse
+- 💾 **Supabase Database** - Persistent scan history with PostgreSQL
+- 📊 **Interactive Visualizations** - Maps, charts, and animations
+- 🎨 **Modern UI** - Responsive design with 25+ animations
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Deployment Options
 
-### 1. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
+### Option 1: Deploy to Vercel + Supabase (Recommended)
 
-### 2. Configure Environment
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
+**Perfect for production deployments with zero DevOps**
 
-### 3. Run the Application
-```bash
-python -m src.main
-```
+1. **Setup Supabase Database** (5 minutes)
+   - Create account at [supabase.com](https://supabase.com)
+   - Create new project
+   - Run migration from `migrations/supabase_migration.sql`
+   - Copy database connection string
 
-The API will be available at:
-- **API Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
-- **Root**: http://localhost:8000/
+2. **Deploy to Vercel** (5 minutes)
+   - Click the "Deploy with Vercel" button above
+   - Connect your GitHub account
+   - Set environment variables:
+     - `DATABASE_URL`: Your Supabase connection string
+     - `CORS_ORIGINS`: Your Vercel deployment URL
+   - Deploy!
+
+3. **Detailed Instructions**: See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
+4. **Checklist**: Use [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)
+
+### Option 2: Local Development
+
+**For testing and development**
+
+1. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Configure Environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your settings
+   ```
+
+3. **Run the Application**
+   ```bash
+   uvicorn src.main:app --reload
+   ```
+
+4. **Access the Platform**
+   - Frontend: http://localhost:8000/
+   - API Docs: http://localhost:8000/docs
+   - Health Check: http://localhost:8000/health
 
 ---
 
