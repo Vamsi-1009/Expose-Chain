@@ -3,18 +3,23 @@ Geolocation Service for ExposeChain
 Handles IP geolocation lookups using free public APIs
 """
 import requests
+import logging
 from typing import Dict, Any, Optional
 import time
+from cachetools import TTLCache
+
+logger = logging.getLogger("exposechain")
 
 
 class GeolocationService:
     """Service for IP geolocation lookups"""
-    
+
     def __init__(self):
         # We'll use ip-api.com (free, no API key required)
         # Limit: 45 requests per minute
         self.api_url = "http://ip-api.com/json/{ip}"
         self.timeout = 10
+        self._cache = TTLCache(maxsize=128, ttl=300)  # 5 min TTL
     
     def lookup_ip_location(self, ip_address: str) -> Dict[str, Any]:
         """
@@ -26,6 +31,11 @@ class GeolocationService:
         Returns:
             Dictionary with geolocation results
         """
+        cache_key = f"geo:{ip_address}"
+        if cache_key in self._cache:
+            logger.debug("Cache hit for %s", cache_key)
+            return self._cache[cache_key]
+
         try:
             # Query the API
             url = self.api_url.format(ip=ip_address)
@@ -44,7 +54,7 @@ class GeolocationService:
                 
                 # Check if lookup was successful
                 if data.get('status') == 'success':
-                    return {
+                    result = {
                         "success": True,
                         "ip": ip_address,
                         "location": {
@@ -78,6 +88,8 @@ class GeolocationService:
                         "reverse_dns": data.get('reverse'),
                         "query_time_ms": query_time
                     }
+                    self._cache[cache_key] = result
+                    return result
                 else:
                     # API returned failure status
                     return {

@@ -4,19 +4,24 @@ Handles SSL/TLS certificate validation and analysis
 """
 import ssl
 import socket
+import logging
 from datetime import datetime
 from typing import Dict, Any, Optional
 import OpenSSL
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
+from cachetools import TTLCache
+
+logger = logging.getLogger("exposechain")
 
 
 class SSLService:
     """Service for SSL/TLS certificate analysis"""
-    
+
     def __init__(self):
         self.timeout = 10
         self.default_port = 443
+        self._cache = TTLCache(maxsize=128, ttl=300)  # 5 min TTL
     
     def get_certificate(self, hostname: str, port: int = None) -> Dict[str, Any]:
         """
@@ -31,7 +36,12 @@ class SSLService:
         """
         if port is None:
             port = self.default_port
-        
+
+        cache_key = f"ssl:{hostname}:{port}"
+        if cache_key in self._cache:
+            logger.debug("Cache hit for %s", cache_key)
+            return self._cache[cache_key]
+
         try:
             # Create SSL context
             context = ssl.create_default_context()
@@ -54,7 +64,7 @@ class SSLService:
                     # Parse certificate with cryptography
                     cert = x509.load_der_x509_certificate(der_cert, default_backend())
                     
-                    return {
+                    result = {
                         "success": True,
                         "hostname": hostname,
                         "port": port,
@@ -66,6 +76,8 @@ class SSLService:
                             "bits": cipher[2] if cipher else None
                         }
                     }
+                    self._cache[cache_key] = result
+                    return result
                     
         except socket.timeout:
             return {

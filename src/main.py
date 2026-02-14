@@ -9,6 +9,14 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from src.api import router
 from src.config import settings
+from src.utils.logging_config import setup_logging
+from src.utils.rate_limiter import limiter
+from src.models.database import init_db
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+# Setup logging
+setup_logging()
 
 # Create FastAPI application
 app = FastAPI(
@@ -19,19 +27,31 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# Register rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 # Mount static files if directory exists
 static_path = Path("static")
 if static_path.exists():
     app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database tables on startup"""
+    init_db()
+
 
 # Include API routes
 app.include_router(router)
@@ -50,7 +70,7 @@ async def serve_frontend():
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     print(f"""
     ==========================================================
     |                                                          |
@@ -65,7 +85,7 @@ if __name__ == "__main__":
     API Docs:      http://{settings.HOST}:{settings.PORT}/docs
     Health Check:  http://{settings.HOST}:{settings.PORT}/health
     """)
-    
+
     uvicorn.run(
         "src.main:app",
         host=settings.HOST,

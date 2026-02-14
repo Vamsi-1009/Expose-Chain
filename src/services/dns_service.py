@@ -5,19 +5,24 @@ Handles DNS queries and analysis
 import dns.resolver
 import dns.reversename
 import time
+import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from cachetools import TTLCache
+
+logger = logging.getLogger("exposechain")
 
 
 class DNSService:
     """Service for DNS lookups and analysis"""
-    
+
     def __init__(self):
         self.resolver = dns.resolver.Resolver()
         # Use Google's DNS servers for reliability
         self.resolver.nameservers = ['8.8.8.8', '8.8.4.4']
         self.resolver.timeout = 5
         self.resolver.lifetime = 5
+        self._cache = TTLCache(maxsize=128, ttl=300)  # 5 min TTL
     
     def lookup_a_records(self, domain: str) -> Dict[str, Any]:
         """
@@ -287,14 +292,19 @@ class DNSService:
     def comprehensive_dns_lookup(self, target: str, target_type: str) -> Dict[str, Any]:
         """
         Perform comprehensive DNS lookup for a target
-        
+
         Args:
             target: Domain name or IP address
             target_type: Type of target (domain, ipv4, ipv6)
-            
+
         Returns:
             Dictionary with all DNS results
         """
+        cache_key = f"dns:{target}:{target_type}"
+        if cache_key in self._cache:
+            logger.debug("Cache hit for %s", cache_key)
+            return self._cache[cache_key]
+
         results = {
             "target": target,
             "target_type": target_type,
@@ -323,5 +333,6 @@ class DNSService:
         elif target_type in ["ipv4", "ipv6"]:
             # Perform reverse DNS lookup for IP addresses
             results["reverse_dns"] = self.reverse_dns_lookup(target)
-        
+
+        self._cache[cache_key] = results
         return results

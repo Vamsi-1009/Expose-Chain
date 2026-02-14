@@ -1,17 +1,27 @@
 """
 API Routes for ExposeChain
+Async endpoints with rate limiting, database persistence, and AI analysis
 """
-from fastapi import APIRouter, HTTPException
+import asyncio
+import uuid
+import json
+import logging
+from fastapi import APIRouter, HTTPException, Request
 from src.models import ScanRequest, ScanResponse
 from src.utils import detect_target_type
-from src.services import DNSService, WHOISService, GeolocationService, SSLService
+from src.services import DNSService, WHOISService, GeolocationService, SSLService, AIRiskPredictor
+from src.utils.rate_limiter import limiter
+from src.models.database import SessionLocal, ScanRecord
 from datetime import datetime
+
+logger = logging.getLogger("exposechain")
 
 router = APIRouter()
 dns_service = DNSService()
 whois_service = WHOISService()
 geo_service = GeolocationService()
 ssl_service = SSLService()
+ai_predictor = AIRiskPredictor()
 
 
 @router.get("/health")
@@ -36,117 +46,123 @@ async def api_info():
             "scan": "/api/scan",
             "dns_lookup": "/api/dns/{domain}",
             "whois_lookup": "/api/whois/{domain}",
-            "ssl_check": "/api/ssl/{domain}"
+            "ssl_check": "/api/ssl/{domain}",
+            "geo_lookup": "/api/geo/{ip}",
+            "history": "/api/history",
+            "report": "/api/report/{scan_id}"
         }
     }
 
 
 @router.post("/api/scan", response_model=ScanResponse)
-async def scan_target(request: ScanRequest):
+@limiter.limit("10/minute")
+async def scan_target(request: Request, scan_request: ScanRequest):
     """
-    Main scanning endpoint with DNS, WHOIS, Geolocation, and SSL
-
-    Args:
-        request: ScanRequest containing target domain and scan_type
-
-    Returns:
-        ScanResponse with comprehensive scan results
+    Main scanning endpoint with DNS, WHOIS, Geolocation, SSL, and AI Analysis.
+    Runs DNS, WHOIS, and SSL lookups in parallel for faster results.
     """
     try:
-        # Detect target type (always domain)
-        target_type = detect_target_type(request.target)
+        target_type = detect_target_type(scan_request.target)
 
-        # Initialize data dictionary
         scan_data = {
             "scan_initiated": datetime.utcnow().isoformat(),
-            "scan_type": request.scan_type,
+            "scan_type": scan_request.scan_type,
         }
 
-        # Perform DNS lookup
-        dns_results = dns_service.comprehensive_dns_lookup(request.target, target_type)
+        # Run DNS, WHOIS, and SSL lookups in parallel
+        dns_results, whois_results, ssl_results = await asyncio.gather(
+            asyncio.to_thread(dns_service.comprehensive_dns_lookup, scan_request.target, target_type),
+            asyncio.to_thread(whois_service.lookup_whois, scan_request.target),
+            asyncio.to_thread(ssl_service.get_certificate, scan_request.target),
+        )
+
         scan_data["dns_lookup"] = dns_results
 
-        # For domains, lookup all IPs found in DNS for geolocation
-        geo_results = geo_service.lookup_domain_ips(dns_results)
+        # Geolocation depends on DNS results, run after DNS
+        geo_results = await asyncio.to_thread(geo_service.lookup_domain_ips, dns_results)
         if geo_results.get('total_ips', 0) > 0:
             scan_data["geolocation"] = geo_results
-            # Add hosting pattern analysis
             scan_data["hosting_analysis"] = geo_service.analyze_hosting_pattern(geo_results)
 
-        # SSL Certificate check
-        ssl_results = ssl_service.get_certificate(request.target)
         scan_data["ssl_certificate"] = ssl_results
-
-        # Add SSL security analysis if certificate was retrieved
         if ssl_results.get("success"):
             scan_data["ssl_security_analysis"] = ssl_service.analyze_certificate_security(ssl_results)
-            scan_data["hostname_validation"] = ssl_service.check_hostname_match(request.target, ssl_results)
+            scan_data["hostname_validation"] = ssl_service.check_hostname_match(scan_request.target, ssl_results)
 
-        # Perform WHOIS lookup
-        whois_results = whois_service.lookup_whois(request.target)
         scan_data["whois_lookup"] = whois_results
-
-        # Add domain analysis
         if whois_results.get("success"):
             scan_data["domain_analysis"] = whois_service.analyze_domain_status(whois_results)
 
-        message = f"Complete security scan finished for domain: {request.target}"
+        # AI Risk Analysis
+        ai_analysis = ai_predictor.analyze(scan_data)
+        scan_data["ai_analysis"] = ai_analysis
+
+        # Generate scan ID and save to database
+        scan_id = str(uuid.uuid4())
+        scan_data["scan_id"] = scan_id
+
+        message = f"Complete security scan finished for domain: {scan_request.target}"
+
+        # Save to database
+        db = SessionLocal()
+        try:
+            record = ScanRecord(
+                scan_id=scan_id,
+                target=scan_request.target,
+                scan_type=scan_request.scan_type,
+                target_type=target_type,
+                success=1,
+                message=message,
+                data_json=json.dumps(scan_data, default=str),
+                ai_analysis_json=json.dumps(ai_analysis, default=str),
+            )
+            db.add(record)
+            db.commit()
+            logger.info("Scan saved: id=%s target=%s", scan_id, scan_request.target)
+        except Exception as db_err:
+            logger.error("Failed to save scan record: %s", db_err)
+            db.rollback()
+        finally:
+            db.close()
 
         return ScanResponse(
             success=True,
-            target=request.target,
+            target=scan_request.target,
             target_type=target_type,
             message=message,
             data=scan_data
         )
 
     except Exception as e:
+        logger.error("Scan failed for target %s: %s", scan_request.target, str(e), exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Scan failed: {str(e)}"
+            detail="An internal error occurred while processing your scan. Please try again."
         )
 
 
 @router.get("/api/dns/{target}")
-async def dns_lookup(target: str):
-    """
-    Dedicated DNS lookup endpoint
-
-    Args:
-        target: Domain name
-
-    Returns:
-        DNS lookup results
-    """
+@limiter.limit("20/minute")
+async def dns_lookup(request: Request, target: str):
+    """Dedicated DNS lookup endpoint"""
     try:
         target_type = detect_target_type(target)
-        results = dns_service.comprehensive_dns_lookup(target, target_type)
-
-        return {
-            "success": True,
-            "results": results
-        }
-
+        results = await asyncio.to_thread(dns_service.comprehensive_dns_lookup, target, target_type)
+        return {"success": True, "results": results}
     except Exception as e:
+        logger.error("DNS lookup failed for %s: %s", target, str(e), exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"DNS lookup failed: {str(e)}"
+            detail="DNS lookup failed. Please try again."
         )
 
 
 @router.get("/api/whois/{domain}")
-async def whois_lookup(domain: str):
-    """
-    Dedicated WHOIS lookup endpoint
-
-    Args:
-        domain: Domain name to query
-
-    Returns:
-        WHOIS lookup results with domain analysis
-    """
+@limiter.limit("20/minute")
+async def whois_lookup(request: Request, domain: str):
+    """Dedicated WHOIS lookup endpoint"""
     try:
-        whois_results = whois_service.lookup_whois(domain)
+        whois_results = await asyncio.to_thread(whois_service.lookup_whois, domain)
 
         analysis = None
         if whois_results.get("success"):
@@ -157,28 +173,20 @@ async def whois_lookup(domain: str):
             "whois_data": whois_results,
             "domain_analysis": analysis
         }
-
     except Exception as e:
+        logger.error("WHOIS lookup failed for %s: %s", domain, str(e), exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"WHOIS lookup failed: {str(e)}"
+            detail="WHOIS lookup failed. Please try again."
         )
 
 
 @router.get("/api/ssl/{domain}")
-async def ssl_certificate_check(domain: str, port: int = 443):
-    """
-    Dedicated SSL certificate check endpoint
-
-    Args:
-        domain: Domain name to check
-        port: Port number (default: 443)
-
-    Returns:
-        SSL certificate information and security analysis
-    """
+@limiter.limit("20/minute")
+async def ssl_certificate_check(request: Request, domain: str, port: int = 443):
+    """Dedicated SSL certificate check endpoint"""
     try:
-        cert_data = ssl_service.get_certificate(domain, port)
+        cert_data = await asyncio.to_thread(ssl_service.get_certificate, domain, port)
 
         security_analysis = None
         hostname_validation = None
@@ -193,9 +201,75 @@ async def ssl_certificate_check(domain: str, port: int = 443):
             "security_analysis": security_analysis,
             "hostname_validation": hostname_validation
         }
-
     except Exception as e:
+        logger.error("SSL check failed for %s: %s", domain, str(e), exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"SSL check failed: {str(e)}"
+            detail="SSL check failed. Please try again."
         )
+
+
+@router.get("/api/history")
+@limiter.limit("30/minute")
+async def get_scan_history(request: Request, limit: int = 20, offset: int = 0):
+    """Get recent scan history"""
+    db = SessionLocal()
+    try:
+        records = (
+            db.query(ScanRecord)
+            .order_by(ScanRecord.created_at.desc())
+            .offset(offset)
+            .limit(min(limit, 100))
+            .all()
+        )
+        return {
+            "success": True,
+            "count": len(records),
+            "history": [
+                {
+                    "scan_id": r.scan_id,
+                    "target": r.target,
+                    "scan_type": r.scan_type,
+                    "success": bool(r.success),
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in records
+            ]
+        }
+    except Exception as e:
+        logger.error("Failed to fetch scan history: %s", str(e), exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch scan history."
+        )
+    finally:
+        db.close()
+
+
+@router.get("/api/report/{scan_id}")
+@limiter.limit("30/minute")
+async def get_scan_report(request: Request, scan_id: str):
+    """Get a formatted report for a specific scan"""
+    db = SessionLocal()
+    try:
+        record = db.query(ScanRecord).filter(ScanRecord.scan_id == scan_id).first()
+        if not record:
+            raise HTTPException(status_code=404, detail="Scan not found")
+
+        report = record.to_dict()
+        report["report_metadata"] = {
+            "generated_at": datetime.utcnow().isoformat(),
+            "platform": "ExposeChain v1.0.0",
+            "report_type": "threat_intelligence",
+        }
+        return report
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to fetch scan report %s: %s", scan_id, str(e), exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch scan report."
+        )
+    finally:
+        db.close()

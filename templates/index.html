@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExposeChain - Threat Intelligence Platform</title>
+    <title>ExposeChain - AI-Powered Threat Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Leaflet.js for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -22,13 +25,13 @@
                             orange: '#ff8c00',
                         },
                         surface: {
-                            900: '#08090e',
-                            800: '#0c0e16',
-                            700: '#10131d',
-                            600: '#151924',
-                            500: '#1a1f2e',
-                            400: '#222838',
-                            300: '#2d3548',
+                            900: '#0a0e1a',
+                            800: '#0f1420',
+                            700: '#141a2a',
+                            600: '#1a2234',
+                            500: '#202940',
+                            400: '#2a3550',
+                            300: '#364160',
                         }
                     }
                 }
@@ -41,61 +44,63 @@
         .display-font { font-family: 'Orbitron', sans-serif; }
 
         body {
-            background: #08090e;
-            color: #a0aec0;
+            background: #0a0e1a;
+            color: #d1dae6;
             min-height: 100vh;
         }
 
-        /* Ambient background */
+        /* Stronger ambient background */
         .ambient-bg {
             position: fixed;
             inset: 0;
             z-index: -1;
             background:
-                radial-gradient(ellipse 800px 400px at 20% 10%, rgba(0, 255, 136, 0.03) 0%, transparent 70%),
-                radial-gradient(ellipse 600px 400px at 80% 50%, rgba(0, 212, 255, 0.025) 0%, transparent 70%),
-                radial-gradient(ellipse 500px 300px at 50% 90%, rgba(168, 85, 247, 0.02) 0%, transparent 70%);
+                radial-gradient(ellipse 900px 500px at 20% 10%, rgba(0, 255, 136, 0.08) 0%, transparent 70%),
+                radial-gradient(ellipse 700px 500px at 80% 50%, rgba(0, 212, 255, 0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 600px 400px at 50% 90%, rgba(168, 85, 247, 0.05) 0%, transparent 70%);
         }
 
-        /* Subtle grid pattern */
+        /* Visible grid pattern */
         .grid-pattern {
             position: fixed;
             inset: 0;
             z-index: -1;
-            opacity: 0.025;
+            opacity: 0.06;
             background-image:
-                linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+                linear-gradient(rgba(0, 255, 136, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.15) 1px, transparent 1px);
             background-size: 60px 60px;
         }
 
-        /* Glass card */
+        /* Glass card - higher contrast */
         .glass-card {
-            background: linear-gradient(135deg, rgba(16, 19, 29, 0.8), rgba(12, 14, 22, 0.9));
-            border: 1px solid rgba(45, 53, 72, 0.5);
+            background: linear-gradient(135deg, rgba(20, 26, 42, 0.95), rgba(15, 20, 32, 0.98));
+            border: 2px solid rgba(0, 255, 136, 0.25);
             backdrop-filter: blur(20px);
-            border-radius: 16px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .glass-card:hover {
-            border-color: rgba(0, 255, 136, 0.15);
-            box-shadow: 0 0 40px rgba(0, 255, 136, 0.03), 0 8px 32px rgba(0, 0, 0, 0.3);
+            border-color: rgba(0, 255, 136, 0.4);
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.15), 0 12px 40px rgba(0, 0, 0, 0.6);
         }
 
-        /* Stat card */
+        /* Stat card - more visible */
         .stat-card {
-            background: linear-gradient(135deg, rgba(16, 19, 29, 0.9), rgba(12, 14, 22, 0.95));
-            border: 1px solid rgba(45, 53, 72, 0.4);
-            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(20, 26, 42, 0.95), rgba(15, 20, 32, 0.98));
+            border: 2px solid rgba(54, 65, 96, 0.6);
+            border-radius: 16px;
             position: relative;
             overflow: hidden;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
         .stat-card::after {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0;
-            height: 2px;
+            height: 3px;
             background: linear-gradient(90deg, transparent, var(--accent-color, #00ff88), transparent);
             opacity: 0;
             transition: opacity 0.3s;
@@ -104,177 +109,254 @@
             opacity: 1;
         }
         .stat-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(0, 255, 136, 0.2);
+            transform: translateY(-3px);
+            border-color: rgba(0, 255, 136, 0.4);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
         }
 
-        /* Terminal block */
+        /* Terminal block - higher contrast */
         .terminal-block {
-            background: rgba(8, 9, 14, 0.8);
-            border: 1px solid rgba(45, 53, 72, 0.3);
-            border-radius: 12px;
+            background: rgba(10, 14, 26, 0.95);
+            border: 2px solid rgba(54, 65, 96, 0.5);
+            border-radius: 14px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            line-height: 1.9;
+            font-size: 15px;
+            line-height: 2;
+            padding: 20px;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
         }
-        .terminal-block .t-dim { color: #4a5568; }
-        .terminal-block .t-green { color: #00ff88; }
-        .terminal-block .t-cyan { color: #00d4ff; }
-        .terminal-block .t-yellow { color: #ffcc00; }
-        .terminal-block .t-red { color: #ff3366; }
-        .terminal-block .t-purple { color: #a855f7; }
-        .terminal-block .t-white { color: #e2e8f0; }
+        .terminal-block .t-dim { color: #6b7a94; }
+        .terminal-block .t-green { color: #00ff88; font-weight: 600; }
+        .terminal-block .t-cyan { color: #00d4ff; font-weight: 600; }
+        .terminal-block .t-yellow { color: #ffcc00; font-weight: 600; }
+        .terminal-block .t-red { color: #ff3366; font-weight: 600; }
+        .terminal-block .t-purple { color: #a855f7; font-weight: 600; }
+        .terminal-block .t-white { color: #ffffff; font-weight: 500; }
 
-        /* Search input */
+        /* Search input - larger and more visible */
         .search-input {
-            background: rgba(8, 9, 14, 0.6);
-            border: 1px solid rgba(45, 53, 72, 0.5);
-            color: #e2e8f0;
-            border-radius: 12px;
+            background: rgba(10, 14, 26, 0.9);
+            border: 2px solid rgba(54, 65, 96, 0.6);
+            color: #ffffff;
+            border-radius: 14px;
             transition: all 0.3s ease;
             font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 500;
         }
         .search-input:focus {
             outline: none;
             border-color: #00ff88;
-            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.08), 0 0 20px rgba(0, 255, 136, 0.06);
+            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.15), 0 0 30px rgba(0, 255, 136, 0.1);
+            background: rgba(10, 14, 26, 1);
         }
-        .search-input::placeholder { color: #3a4258; }
+        .search-input::placeholder { color: #4a5a74; font-size: 15px; }
 
-        /* Select */
+        /* Select - larger */
         .cyber-select {
-            background: rgba(8, 9, 14, 0.6);
-            border: 1px solid rgba(45, 53, 72, 0.5);
-            color: #a0aec0;
-            border-radius: 12px;
+            background: rgba(10, 14, 26, 0.9);
+            border: 2px solid rgba(54, 65, 96, 0.6);
+            color: #d1dae6;
+            border-radius: 14px;
             cursor: pointer;
             font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
             transition: all 0.3s ease;
         }
         .cyber-select:focus {
             outline: none;
             border-color: #00d4ff;
-            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.08);
+            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.15);
         }
 
-        /* Execute button */
+        /* Execute button - larger and brighter */
         .exec-btn {
             background: linear-gradient(135deg, #00ff88, #00d4ff);
-            color: #08090e;
-            font-weight: 700;
-            border-radius: 12px;
-            letter-spacing: 1.5px;
+            color: #0a0e1a;
+            font-weight: 800;
+            font-size: 15px;
+            border-radius: 14px;
+            letter-spacing: 2px;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
         }
         .exec-btn::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+            background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%);
             transform: translateX(-100%);
             transition: transform 0.6s;
         }
         .exec-btn:hover::before { transform: translateX(100%); }
         .exec-btn:hover {
-            box-shadow: 0 4px 25px rgba(0, 255, 136, 0.3), 0 0 60px rgba(0, 255, 136, 0.08);
-            transform: translateY(-1px);
+            box-shadow: 0 6px 30px rgba(0, 255, 136, 0.5), 0 0 80px rgba(0, 255, 136, 0.15);
+            transform: translateY(-2px);
         }
         .exec-btn:active { transform: translateY(0); }
         .exec-btn:disabled {
-            opacity: 0.4;
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        /* Tabs */
+        /* Tabs - larger and clearer */
         .nav-tabs {
             display: flex;
-            gap: 2px;
-            background: rgba(8, 9, 14, 0.5);
-            border-radius: 12px;
-            padding: 4px;
+            gap: 3px;
+            background: rgba(10, 14, 26, 0.8);
+            border-radius: 14px;
+            padding: 6px;
+            overflow-x: auto;
         }
         .nav-tab {
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #4a5568;
+            padding: 14px 26px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #6b7a94;
             cursor: pointer;
             transition: all 0.3s ease;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             border: none;
             background: transparent;
+            white-space: nowrap;
         }
-        .nav-tab:hover { color: #a0aec0; background: rgba(255,255,255,0.03); }
+        .nav-tab:hover {
+            color: #d1dae6;
+            background: rgba(255,255,255,0.06);
+        }
         .nav-tab.active {
             color: #00ff88;
-            background: rgba(0, 255, 136, 0.08);
-            box-shadow: inset 0 0 20px rgba(0, 255, 136, 0.03);
+            background: rgba(0, 255, 136, 0.15);
+            box-shadow: inset 0 0 25px rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
         }
 
-        /* Badges */
-        .badge-low { background: rgba(0, 255, 136, 0.1); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.25); }
-        .badge-medium { background: rgba(255, 204, 0, 0.1); color: #ffcc00; border: 1px solid rgba(255, 204, 0, 0.25); }
-        .badge-high { background: rgba(255, 51, 102, 0.1); color: #ff3366; border: 1px solid rgba(255, 51, 102, 0.25); }
-        .badge-critical { background: rgba(255, 51, 102, 0.2); color: #ff5577; border: 1px solid rgba(255, 51, 102, 0.4); }
-        .badge-unknown { background: rgba(160, 174, 192, 0.1); color: #a0aec0; border: 1px solid rgba(160, 174, 192, 0.25); }
+        /* Badges - larger and brighter */
+        .badge-low {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 2px solid rgba(0, 255, 136, 0.4);
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .badge-medium {
+            background: rgba(255, 204, 0, 0.2);
+            color: #ffcc00;
+            border: 2px solid rgba(255, 204, 0, 0.4);
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .badge-high {
+            background: rgba(255, 51, 102, 0.2);
+            color: #ff3366;
+            border: 2px solid rgba(255, 51, 102, 0.4);
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .badge-critical {
+            background: rgba(255, 51, 102, 0.3);
+            color: #ff5577;
+            border: 2px solid rgba(255, 51, 102, 0.5);
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .badge-unknown {
+            background: rgba(160, 174, 192, 0.2);
+            color: #d1dae6;
+            border: 2px solid rgba(160, 174, 192, 0.4);
+            font-weight: 700;
+            font-size: 13px;
+        }
 
-        /* Record chip */
+        /* Record chip - brighter */
         .record-chip {
             display: inline-flex;
             align-items: center;
-            padding: 3px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 800;
             font-family: 'JetBrains Mono', monospace;
-            letter-spacing: 1px;
-            background: rgba(0, 212, 255, 0.08);
+            letter-spacing: 1.5px;
+            background: rgba(0, 212, 255, 0.15);
             color: #00d4ff;
-            border: 1px solid rgba(0, 212, 255, 0.2);
+            border: 2px solid rgba(0, 212, 255, 0.3);
         }
 
-        /* Risk gauge */
+        /* Risk gauge - more visible */
         .risk-gauge {
-            height: 6px;
-            border-radius: 3px;
-            background: rgba(45, 53, 72, 0.3);
+            height: 10px;
+            border-radius: 5px;
+            background: rgba(54, 65, 96, 0.5);
             overflow: hidden;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
         }
         .risk-gauge-fill {
             height: 100%;
-            border-radius: 3px;
+            border-radius: 5px;
             transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s ease;
+            box-shadow: 0 0 15px currentColor;
         }
 
         /* Divider */
         .section-divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(45, 53, 72, 0.5), transparent);
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.3), transparent);
             margin: 0;
+        }
+
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(54, 65, 96, 0.3) 25%, rgba(54, 65, 96, 0.5) 50%, rgba(54, 65, 96, 0.3) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
         /* Animations */
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .animate-in { animation: slideUp 0.5s ease-out forwards; }
+        .animate-in { animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
         .delay-1 { animation-delay: 0.1s; opacity: 0; }
         .delay-2 { animation-delay: 0.2s; opacity: 0; }
         .delay-3 { animation-delay: 0.3s; opacity: 0; }
         .delay-4 { animation-delay: 0.4s; opacity: 0; }
 
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .fade-in-scale { animation: fadeInScale 0.5s ease-out forwards; }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .slide-in-right { animation: slideInRight 0.5s ease-out forwards; }
+
         @keyframes pulse-soft {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
         }
         .pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 136, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(0, 255, 136, 0.8), 0 0 50px rgba(0, 255, 136, 0.3); }
+        }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 
         @keyframes typing-dots {
             0% { content: '.'; }
@@ -286,64 +368,219 @@
         .shake { animation: shake 0.4s ease; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            50% { transform: translateX(6px); }
-            75% { transform: translateX(-3px); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-4px); }
         }
 
-        /* Status dot */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .float { animation: float 3s ease-in-out infinite; }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+            background-size: 1000px 100%;
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { border-color: rgba(0, 255, 136, 0.25); }
+            50% { border-color: rgba(0, 255, 136, 0.6); }
+        }
+        .border-glow { animation: borderGlow 2s ease-in-out infinite; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin-slow { animation: spin 20s linear infinite; }
+
+        @keyframes bounce-in {
+            0% { opacity: 0; transform: scale(0.3); }
+            50% { opacity: 1; transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        .bounce-in { animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-down { animation: slideDown 0.4s ease-out; }
+
+        /* Hover animations */
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-5px);
+        }
+
+        .hover-glow {
+            transition: filter 0.3s ease;
+        }
+        .hover-glow:hover {
+            filter: brightness(1.2) drop-shadow(0 0 20px rgba(0, 255, 136, 0.4));
+        }
+
+        /* Status dot - larger */
         .status-dot {
-            width: 8px; height: 8px;
+            width: 12px; height: 12px;
             border-radius: 50%;
             background: #00ff88;
-            box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
             animation: pulse-soft 2s ease-in-out infinite;
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(45, 53, 72, 0.5); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 255, 136, 0.2); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(10, 14, 26, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 255, 136, 0.5); }
 
-        /* Section label */
+        /* Section label - larger */
         .section-label {
-            font-size: 10px;
-            font-weight: 700;
+            font-size: 12px;
+            font-weight: 800;
             letter-spacing: 3px;
             text-transform: uppercase;
-            color: #4a5568;
+            color: #8b9bb0;
+        }
+
+        /* History sidebar */
+        .history-sidebar {
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 380px;
+            background: rgba(10, 14, 26, 0.98);
+            border-left: 2px solid rgba(0, 255, 136, 0.3);
+            backdrop-filter: blur(25px);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7);
+        }
+        .history-sidebar.open {
+            transform: translateX(0);
+        }
+        .history-item {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .history-item:hover {
+            background: rgba(0, 255, 136, 0.08);
+            border-color: rgba(0, 255, 136, 0.4) !important;
+        }
+
+        /* Map container */
+        #map {
+            height: 450px;
+            border-radius: 14px;
+            border: 2px solid rgba(54, 65, 96, 0.5);
+        }
+        .leaflet-popup-content-wrapper {
+            background: rgba(10, 14, 26, 0.98);
+            color: #ffffff;
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .leaflet-popup-tip {
+            background: rgba(10, 14, 26, 0.98);
+        }
+
+        /* Header improvements */
+        header {
+            background: rgba(10, 14, 26, 0.95) !important;
+            backdrop-filter: blur(25px) !important;
+            border-bottom: 2px solid rgba(0, 255, 136, 0.2) !important;
+        }
+
+        /* Larger text globally */
+        h1, h2, h3 { font-weight: 800 !important; }
+        p, span, div { font-size: 15px; }
+
+        /* Particle effect */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: #00ff88;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            animation: particleFloat 4s ease-in infinite;
+        }
+        @keyframes particleFloat {
+            0% { opacity: 0; transform: translateY(0) translateX(0); }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { opacity: 0; transform: translateY(-100vh) translateX(var(--drift, 0)); }
         }
     </style>
 </head>
 <body>
     <div class="ambient-bg"></div>
     <div class="grid-pattern"></div>
+    <div id="particles"></div>
+
+    <!-- History Toggle Button -->
+    <button onclick="toggleHistory()" class="fixed top-24 right-6 z-50 w-14 h-14 rounded-xl flex items-center justify-center glass-card hover:scale-110 transition-transform pulse-glow fade-in-scale" style="border-color: rgba(0,255,136,0.4); animation-delay: 0.5s;">
+        <i class="fas fa-history text-xl hover-glow" style="color: #00ff88;"></i>
+    </button>
+
+    <!-- History Sidebar -->
+    <div id="historySidebar" class="history-sidebar">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="display-font text-2xl font-bold" style="color: #00ff88;">SCAN HISTORY</h3>
+                <button onclick="toggleHistory()" class="w-10 h-10 rounded-lg flex items-center justify-center hover:scale-110 transition-transform" style="background: rgba(255,51,102,0.2); border: 2px solid rgba(255,51,102,0.4);">
+                    <i class="fas fa-times text-lg" style="color: #ff3366;"></i>
+                </button>
+            </div>
+            <div id="historyList" class="space-y-3">
+                <div class="text-center py-10">
+                    <i class="fas fa-spinner fa-spin text-3xl" style="color: #4a5a74;"></i>
+                    <p class="text-sm mt-3 font-semibold" style="color: #6b7a94;">Loading history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ===== HEADER ===== -->
-    <header class="border-b" style="border-color: rgba(45,53,72,0.3); background: rgba(8,9,14,0.7); backdrop-filter: blur(20px);">
-        <div class="max-w-7xl mx-auto px-6 py-5">
+    <header class="border-b sticky top-0 z-40 slide-down">
+        <div class="max-w-7xl mx-auto px-6 py-6">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <!-- Logo icon -->
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,212,255,0.15)); border: 1px solid rgba(0,255,136,0.2);">
-                        <i class="fas fa-shield-alt text-lg" style="color: #00ff88;"></i>
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center pulse-soft hover-lift" style="background: linear-gradient(135deg, rgba(0,255,136,0.2), rgba(0,212,255,0.2)); border: 2px solid rgba(0,255,136,0.3); box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);">
+                        <i class="fas fa-shield-alt text-2xl spin-slow" style="color: #00ff88;"></i>
                     </div>
                     <div>
-                        <h1 class="display-font text-xl font-bold tracking-wider" style="color: #e2e8f0;">
+                        <h1 class="display-font text-2xl font-bold tracking-wider" style="color: #ffffff;">
                             EXPOSE<span style="color: #00ff88;">CHAIN</span>
                         </h1>
-                        <p class="text-xs mt-0.5" style="color: #3a4258; letter-spacing: 2px;">THREAT INTELLIGENCE PLATFORM</p>
+                        <p class="text-sm mt-0.5 font-semibold" style="color: #6b7a94; letter-spacing: 2px;">AI-POWERED THREAT INTELLIGENCE</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-6">
-                    <div class="hidden md:flex items-center gap-2">
+                    <div class="hidden md:flex items-center gap-3">
                         <div class="status-dot"></div>
-                        <span class="mono text-xs" style="color: #3a4a5c;">SYSTEM ONLINE</span>
+                        <span class="mono text-sm font-bold" style="color: #6b7a94;">SYSTEM ONLINE</span>
                     </div>
                     <div class="text-right hidden md:block">
-                        <div class="mono text-xs" style="color: #2d3548;">v1.0.0</div>
-                        <div class="text-xs" style="color: #2d3548;">by <span style="color: #4a5568;">Vamsi Krishna</span></div>
+                        <div class="mono text-sm font-bold" style="color: #8b9bb0;">v1.0.0</div>
+                        <div class="text-sm font-semibold" style="color: #6b7a94;">by <span style="color: #8b9bb0;">Vamsi Krishna</span></div>
                     </div>
                 </div>
             </div>
@@ -351,62 +588,79 @@
     </header>
 
     <!-- ===== MAIN ===== -->
-    <main class="max-w-7xl mx-auto px-6 py-10">
+    <main class="max-w-7xl mx-auto px-6 py-12">
 
         <!-- Search Section -->
-        <div class="glass-card p-8 mb-10">
-            <div class="flex items-center gap-2 mb-5">
+        <div class="glass-card p-10 mb-12 fade-in-scale hover-lift">
+            <div class="flex items-center gap-3 mb-6">
                 <span class="section-label">Target Analysis</span>
-                <div class="flex-1 section-divider"></div>
+                <div class="flex-1 section-divider shimmer"></div>
             </div>
-            <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex flex-col md:flex-row gap-5">
                 <div class="flex-1 relative">
-                    <div class="absolute left-4 top-1/2 -translate-y-1/2 mono text-sm" style="color: #2d3548;">
+                    <div class="absolute left-5 top-1/2 -translate-y-1/2 mono text-lg" style="color: #4a5a74;">
                         <i class="fas fa-terminal"></i>
                     </div>
                     <input
                         type="text"
                         id="targetInput"
-                        placeholder="Enter domain name  (e.g. google.com)"
-                        class="search-input w-full pl-12 pr-4 py-4 text-sm"
+                        placeholder="Enter domain name (e.g. google.com)"
+                        class="search-input w-full pl-14 pr-5 py-5 text-base"
                         onkeypress="if(event.key==='Enter') startScan()"
                         autocomplete="off"
                         spellcheck="false"
                     >
                 </div>
-                <select id="scanType" class="cyber-select px-5 py-4 text-xs md:w-44">
+                <select id="scanType" class="cyber-select px-6 py-5 text-sm md:w-48">
                     <option value="quick">QUICK SCAN</option>
                     <option value="full">FULL SCAN</option>
                 </select>
-                <button onclick="startScan()" id="scanButton" class="exec-btn px-8 py-4 text-xs uppercase flex items-center justify-center gap-2">
-                    <i class="fas fa-bolt"></i>
+                <button onclick="startScan()" id="scanButton" class="exec-btn px-10 py-5 text-sm uppercase flex items-center justify-center gap-3 hover-lift">
+                    <i class="fas fa-bolt text-lg pulse-soft"></i>
                     <span>Execute</span>
                 </button>
             </div>
         </div>
 
-        <!-- Loading -->
-        <div id="loadingSection" class="hidden glass-card p-10 mb-10">
-            <div class="flex flex-col items-center">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="status-dot"></div>
-                    <span class="display-font text-sm font-semibold tracking-widest" style="color: #00ff88;">SCANNING TARGET</span>
+        <!-- Loading Skeletons -->
+        <div id="loadingSkeletons" class="hidden space-y-8 mb-12">
+            <div class="glass-card p-10">
+                <div class="skeleton h-8 w-56 mb-8 rounded"></div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    <div class="skeleton h-32 rounded-2xl"></div>
+                    <div class="skeleton h-32 rounded-2xl"></div>
+                    <div class="skeleton h-32 rounded-2xl"></div>
+                    <div class="skeleton h-32 rounded-2xl"></div>
                 </div>
-                <div class="terminal-block p-5 w-full max-w-xl" id="loadingTerminal">
-                    <div class="t-green">[*] Initializing scan module<span class="typing-dots"></span></div>
+            </div>
+            <div class="glass-card p-10">
+                <div class="skeleton h-8 w-72 mb-8 rounded"></div>
+                <div class="skeleton h-48 rounded-2xl"></div>
+            </div>
+        </div>
+
+        <!-- Loading Terminal -->
+        <div id="loadingSection" class="hidden glass-card p-12 mb-12">
+            <div class="flex flex-col items-center">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="status-dot"></div>
+                    <span class="display-font text-xl font-semibold tracking-widest" style="color: #00ff88;">AI ANALYSIS IN PROGRESS</span>
+                </div>
+                <div class="terminal-block w-full max-w-2xl" id="loadingTerminal">
+                    <div class="t-green text-lg">[*] Initializing AI threat model<span class="typing-dots"></span></div>
                 </div>
             </div>
         </div>
 
         <!-- Error -->
-        <div id="errorSection" class="hidden glass-card p-6 mb-10" style="border-color: rgba(255,51,102,0.2);">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(255,51,102,0.1);">
-                    <i class="fas fa-times" style="color: #ff3366;"></i>
+        <div id="errorSection" class="hidden glass-card p-8 mb-12" style="border-color: rgba(255,51,102,0.4);">
+            <div class="flex items-center gap-5">
+                <div class="w-14 h-14 rounded-xl flex items-center justify-center" style="background: rgba(255,51,102,0.2); border: 2px solid rgba(255,51,102,0.4);">
+                    <i class="fas fa-times text-2xl" style="color: #ff3366;"></i>
                 </div>
                 <div>
-                    <p class="text-sm font-semibold" style="color: #ff3366;">Scan Failed</p>
-                    <p class="text-xs mt-1" style="color: #4a5568;" id="errorMessage"></p>
+                    <p class="text-lg font-bold" style="color: #ff3366;">Scan Failed</p>
+                    <p class="text-base mt-2 font-semibold" style="color: #8b9bb0;" id="errorMessage"></p>
                 </div>
             </div>
         </div>
@@ -415,97 +669,88 @@
         <div id="resultsSection" class="hidden">
 
             <!-- Target Info Bar -->
-            <div class="flex items-center gap-3 mb-8 animate-in">
-                <div class="w-2 h-2 rounded-full" style="background: #00ff88;"></div>
-                <span class="mono text-xs" style="color: #4a5568;">TARGET</span>
-                <span class="mono text-sm font-semibold" style="color: #00ff88;" id="targetDisplay"></span>
-                <span class="mono text-xs px-2 py-0.5 rounded-md" style="background: rgba(0,255,136,0.06); color: #00ff88; border: 1px solid rgba(0,255,136,0.15);" id="scanTypeDisplay"></span>
+            <div class="flex items-center gap-4 mb-10 animate-in flex-wrap">
+                <div class="w-3 h-3 rounded-full" style="background: #00ff88; box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);"></div>
+                <span class="mono text-sm font-bold" style="color: #8b9bb0;">TARGET</span>
+                <span class="mono text-xl font-bold" style="color: #00ff88;" id="targetDisplay"></span>
+                <span class="mono text-sm px-3 py-1 rounded-lg font-bold" style="background: rgba(0,255,136,0.1); color: #00ff88; border: 2px solid rgba(0,255,136,0.25);" id="scanTypeDisplay"></span>
                 <div class="flex-1"></div>
-                <span class="mono text-xs" style="color: #2d3548;"><i class="far fa-clock mr-1"></i><span id="scanTime"></span></span>
+                <span class="mono text-base font-semibold" style="color: #6b7a94;"><i class="far fa-clock mr-2"></i><span id="scanTime"></span></span>
             </div>
 
             <!-- Summary Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div class="stat-card p-5 animate-in delay-1" style="--accent-color: #00d4ff;">
-                    <p class="section-label mb-2">Target Type</p>
-                    <p class="display-font text-lg font-bold" style="color: #00d4ff;" id="targetType">-</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+                <div class="stat-card p-7 animate-in delay-1" style="--accent-color: #00d4ff;">
+                    <p class="section-label mb-3">AI Risk Score</p>
+                    <p class="display-font text-4xl font-bold" style="color: #00d4ff;" id="aiRiskScore">-</p>
                 </div>
-                <div class="stat-card p-5 animate-in delay-2" style="--accent-color: #ffcc00;">
-                    <p class="section-label mb-2">Risk Level</p>
-                    <p class="text-lg font-bold" id="riskLevel">-</p>
+                <div class="stat-card p-7 animate-in delay-2" style="--accent-color: #ffcc00;">
+                    <p class="section-label mb-3">Threat Level</p>
+                    <p class="text-xl font-bold" id="aiThreatLevel">-</p>
                 </div>
-                <div class="stat-card p-5 animate-in delay-3" style="--accent-color: #00ff88;">
-                    <p class="section-label mb-2">SSL Score</p>
-                    <p class="display-font text-lg font-bold" style="color: #00ff88;" id="sslScore">-</p>
+                <div class="stat-card p-7 animate-in delay-3" style="--accent-color: #00ff88;">
+                    <p class="section-label mb-3">SSL Score</p>
+                    <p class="display-font text-2xl font-bold" style="color: #00ff88;" id="sslScore">-</p>
                 </div>
-                <div class="stat-card p-5 animate-in delay-4" style="--accent-color: #a855f7;">
-                    <p class="section-label mb-2">IPs Found</p>
-                    <p class="display-font text-lg font-bold" style="color: #a855f7;" id="ipCount">-</p>
+                <div class="stat-card p-7 animate-in delay-4" style="--accent-color: #a855f7;">
+                    <p class="section-label mb-3">IPs Found</p>
+                    <p class="display-font text-2xl font-bold" style="color: #a855f7;" id="ipCount">-</p>
                 </div>
             </div>
 
-            <!-- Threat Assessment -->
-            <div class="glass-card p-8 mb-8 animate-in delay-2" id="riskPanel">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: rgba(255,204,0,0.08);">
-                        <i class="fas fa-shield-alt text-sm" style="color: #ffcc00;"></i>
+            <!-- AI Analysis Panel -->
+            <div class="glass-card p-10 mb-10 animate-in delay-2" id="aiPanel">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-12 h-12 rounded-lg flex items-center justify-center" style="background: rgba(0,212,255,0.15); border: 2px solid rgba(0,212,255,0.3);">
+                        <i class="fas fa-brain text-xl" style="color: #00d4ff;"></i>
                     </div>
-                    <span class="text-sm font-semibold" style="color: #e2e8f0;">Threat Assessment</span>
+                    <span class="text-xl font-bold" style="color: #ffffff;">AI Threat Intelligence</span>
                     <div class="flex-1"></div>
-                    <span class="text-xs px-3 py-1 rounded-lg font-semibold mono" id="overallRiskBadge">-</span>
+                    <span class="text-base px-4 py-2 rounded-lg font-bold mono" id="aiRiskBadge">-</span>
                 </div>
 
-                <!-- Risk Gauge -->
-                <div class="mb-8">
-                    <div class="flex justify-between mb-2">
-                        <span class="section-label">Risk Score</span>
-                        <span class="mono text-xs font-bold" id="riskScoreText" style="color: #00ff88;">0 / 100</span>
+                <!-- AI Risk Gauge -->
+                <div class="mb-10">
+                    <div class="flex justify-between mb-3">
+                        <span class="section-label">AI CONFIDENCE SCORE</span>
+                        <span class="mono text-base font-bold" id="aiScoreText" style="color: #00ff88;">0 / 100</span>
                     </div>
                     <div class="risk-gauge">
-                        <div class="risk-gauge-fill" id="riskScoreBar" style="width: 0%; background: #00ff88;"></div>
-                    </div>
-                    <div class="flex justify-between mt-1.5">
-                        <span class="text-xs" style="color: #1a1f2e;">Safe</span>
-                        <span class="text-xs" style="color: #1a1f2e;">Critical</span>
+                        <div class="risk-gauge-fill" id="aiScoreBar" style="width: 0%; background: #00ff88;"></div>
                     </div>
                 </div>
 
-                <!-- Risk Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div class="terminal-block p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <i class="fas fa-globe text-xs" style="color: #00d4ff;"></i>
-                            <span class="section-label" style="color: #00d4ff;">Domain Risk</span>
+                <!-- AI Insights -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="terminal-block">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-exclamation-triangle text-base" style="color: #ff3366;"></i>
+                            <span class="section-label" style="color: #ff3366;">DETECTED THREATS</span>
                         </div>
-                        <div id="domainRiskFactors" class="space-y-1"><span class="t-dim">Analyzing...</span></div>
+                        <div id="aiThreats" class="space-y-2"><span class="t-dim">Analyzing...</span></div>
                     </div>
-                    <div class="terminal-block p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <i class="fas fa-lock text-xs" style="color: #00ff88;"></i>
-                            <span class="section-label" style="color: #00ff88;">SSL / TLS</span>
+                    <div class="terminal-block">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-lightbulb text-base" style="color: #ffcc00;"></i>
+                            <span class="section-label" style="color: #ffcc00;">AI RECOMMENDATIONS</span>
                         </div>
-                        <div id="sslRiskFactors" class="space-y-1"><span class="t-dim">Analyzing...</span></div>
+                        <div id="aiRecommendations" class="space-y-2"><span class="t-dim">Analyzing...</span></div>
                     </div>
-                    <div class="terminal-block p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <i class="fas fa-server text-xs" style="color: #a855f7;"></i>
-                            <span class="section-label" style="color: #a855f7;">Infrastructure</span>
-                        </div>
-                        <div id="hostingRiskFactors" class="space-y-1"><span class="t-dim">Analyzing...</span></div>
+                </div>
+
+                <!-- AI Summary -->
+                <div class="mt-8 p-6 rounded-xl" style="background: rgba(0,212,255,0.06); border: 2px solid rgba(0,212,255,0.2);">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i class="fas fa-info-circle text-base" style="color: #00d4ff;"></i>
+                        <span class="section-label" style="color: #00d4ff;">AI SUMMARY</span>
                     </div>
-                    <div class="terminal-block p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <i class="fas fa-clipboard-check text-xs" style="color: #ffcc00;"></i>
-                            <span class="section-label" style="color: #ffcc00;">Recommendations</span>
-                        </div>
-                        <div id="riskRecommendations" class="space-y-1"><span class="t-dim">Analyzing...</span></div>
-                    </div>
+                    <p class="text-base font-semibold" style="color: #d1dae6; line-height: 1.8;" id="aiSummary">Performing deep analysis...</p>
                 </div>
             </div>
 
             <!-- Detailed Tabs -->
             <div class="glass-card overflow-hidden animate-in delay-3">
-                <div class="p-4 pb-0">
+                <div class="p-5 pb-0">
                     <div class="nav-tabs">
                         <button onclick="showTab('dns')" class="nav-tab active" data-tab="dns">
                             <i class="fas fa-server mr-2"></i>DNS
@@ -521,10 +766,13 @@
                         </button>
                     </div>
                 </div>
-                <div class="p-6 pt-5">
+                <div class="p-8 pt-6">
                     <div id="dnsTab" class="tab-content"><div id="dnsContent"></div></div>
                     <div id="whoisTab" class="tab-content hidden"><div id="whoisContent"></div></div>
-                    <div id="geoTab" class="tab-content hidden"><div id="geoContent"></div></div>
+                    <div id="geoTab" class="tab-content hidden">
+                        <div id="map" class="mb-8"></div>
+                        <div id="geoContent"></div>
+                    </div>
                     <div id="sslTab" class="tab-content hidden"><div id="sslContent"></div></div>
                 </div>
             </div>
@@ -532,16 +780,16 @@
     </main>
 
     <!-- ===== FOOTER ===== -->
-    <footer class="border-t mt-20 py-8" style="border-color: rgba(45,53,72,0.2);">
-        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-                <div class="w-6 h-6 rounded-lg flex items-center justify-center" style="background: rgba(0,255,136,0.06);">
-                    <i class="fas fa-shield-alt text-xs" style="color: #00ff88;"></i>
+    <footer class="border-t mt-24 py-10" style="border-color: rgba(0,255,136,0.2);">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2);">
+                    <i class="fas fa-shield-alt text-sm" style="color: #00ff88;"></i>
                 </div>
-                <span class="text-xs" style="color: #2d3548;">ExposeChain v1.0.0</span>
+                <span class="text-base font-bold" style="color: #8b9bb0;">ExposeChain v1.0.0 - AI-Powered</span>
             </div>
-            <p class="text-xs" style="color: #1a1f2e;">
-                Built by <span style="color: #2d3548;">Vamsi Krishna</span> &middot; AI-Powered Cybersecurity Intelligence
+            <p class="text-base font-semibold" style="color: #6b7a94;">
+                Built by <span style="color: #8b9bb0;">Vamsi Krishna</span> • Threat Intelligence Platform
             </p>
         </div>
     </footer>
@@ -550,15 +798,16 @@
     <script>
         let scanData = null;
         let loadingInterval = null;
+        let geoMap = null;
 
         const loadingMessages = [
-            '[*] Initializing scan module',
+            '[*] Initializing AI threat model',
             '[*] Resolving DNS records',
             '[*] Querying WHOIS database',
             '[*] Mapping geolocation data',
             '[*] Analyzing SSL certificate',
-            '[*] Running threat assessment',
-            '[*] Compiling intelligence report'
+            '[*] Running AI risk prediction',
+            '[*] Generating threat intelligence'
         ];
 
         function simulateLoading() {
@@ -568,7 +817,7 @@
             function addLine() {
                 if (i < loadingMessages.length) {
                     const line = document.createElement('div');
-                    line.className = 't-green';
+                    line.className = 't-green text-lg';
                     line.innerHTML = loadingMessages[i] + '<span class="typing-dots"></span>';
                     terminal.appendChild(line);
                     terminal.scrollTop = terminal.scrollHeight;
@@ -581,7 +830,58 @@
                 }
             }
             addLine();
-            loadingInterval = setInterval(addLine, 1100);
+            loadingInterval = setInterval(addLine, 900);
+        }
+
+        function toggleHistory() {
+            const sidebar = document.getElementById('historySidebar');
+            sidebar.classList.toggle('open');
+            if (sidebar.classList.contains('open')) {
+                loadHistory();
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/history?limit=20');
+                const data = await res.json();
+                const list = document.getElementById('historyList');
+                if (data.history && data.history.length > 0) {
+                    list.innerHTML = data.history.map(item => `
+                        <div class="history-item p-5 rounded-xl border-2" style="background: rgba(20,26,42,0.7); border-color: rgba(54,65,96,0.4);" onclick="loadScanReport('${item.scan_id}')">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="mono text-base font-bold" style="color: #00ff88;">${item.target}</span>
+                                <span class="${item.success ? 'badge-low' : 'badge-high'} text-xs px-3 py-1 rounded-lg mono">${item.success ? 'OK' : 'FAIL'}</span>
+                            </div>
+                            <div class="flex items-center gap-4 text-sm" style="color: #8b9bb0;">
+                                <span><i class="far fa-clock mr-2"></i>${new Date(item.created_at).toLocaleString()}</span>
+                                <span class="mono font-bold">${item.scan_type.toUpperCase()}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<div class="text-center py-12"><p class="text-base font-semibold" style="color: #6b7a94;">No scan history yet</p></div>';
+                }
+            } catch (e) {
+                document.getElementById('historyList').innerHTML = '<div class="text-center py-12"><p class="text-base font-semibold" style="color: #ff3366;">Failed to load history</p></div>';
+            }
+        }
+
+        async function loadScanReport(scanId) {
+            try {
+                const res = await fetch(`/api/report/${scanId}`);
+                const report = await res.json();
+                if (report.data_json) {
+                    const data = JSON.parse(report.data_json);
+                    scanData = { target: report.target, target_type: report.target_type, data: data, success: true };
+                    document.getElementById('targetInput').value = report.target;
+                    displayResults(scanData);
+                    document.getElementById('resultsSection').classList.remove('hidden');
+                    toggleHistory();
+                }
+            } catch (e) {
+                console.error('Failed to load report:', e);
+            }
         }
 
         function startScan() {
@@ -594,12 +894,13 @@
                 setTimeout(() => { el.classList.remove('shake'); el.style.borderColor = ''; }, 500);
                 return;
             }
+            document.getElementById('loadingSkeletons').classList.remove('hidden');
             document.getElementById('loadingSection').classList.remove('hidden');
             document.getElementById('resultsSection').classList.add('hidden');
             document.getElementById('errorSection').classList.add('hidden');
             const btn = document.getElementById('scanButton');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Scanning</span>';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin text-lg"></i> <span>Scanning</span>';
             simulateLoading();
 
             fetch('/api/scan', {
@@ -618,138 +919,156 @@
                     last.innerHTML = last.innerHTML.replace('<span class="typing-dots"></span>', ' <span class="t-cyan">[OK]</span>');
                 }
                 const done = document.createElement('div');
-                done.className = 't-cyan';
-                done.style.fontWeight = '600';
-                done.textContent = '[+] SCAN COMPLETE';
+                done.className = 't-cyan text-lg';
+                done.style.fontWeight = '700';
+                done.textContent = '[+] AI ANALYSIS COMPLETE';
                 terminal.appendChild(done);
                 setTimeout(() => {
                     displayResults(data);
+                    document.getElementById('loadingSkeletons').classList.add('hidden');
                     document.getElementById('loadingSection').classList.add('hidden');
                     document.getElementById('resultsSection').classList.remove('hidden');
                 }, 700);
             })
             .catch(error => {
                 clearInterval(loadingInterval);
+                document.getElementById('loadingSkeletons').classList.add('hidden');
                 document.getElementById('loadingSection').classList.add('hidden');
                 document.getElementById('errorSection').classList.remove('hidden');
                 document.getElementById('errorMessage').textContent = error.message;
             })
             .finally(() => {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-bolt"></i> <span>Execute</span>';
+                btn.innerHTML = '<i class="fas fa-bolt text-lg"></i> <span>Execute</span>';
             });
         }
 
         function displayResults(data) {
+            // Animate counter for AI Risk Score
+            const animateCounter = (el, target) => {
+                let current = 0;
+                const increment = target / 30;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        el.textContent = target + '/100';
+                        clearInterval(timer);
+                    } else {
+                        el.textContent = Math.floor(current) + '/100';
+                    }
+                }, 30);
+            };
+
             document.getElementById('targetDisplay').textContent = data.target.toUpperCase();
             document.getElementById('scanTypeDisplay').textContent = data.data.scan_type.toUpperCase();
             document.getElementById('scanTime').textContent = new Date().toLocaleTimeString();
-            document.getElementById('targetType').textContent = 'DOMAIN';
 
-            const riskLevel = data.data.domain_analysis?.risk_level || 'unknown';
-            const riskEl = document.getElementById('riskLevel');
-            riskEl.textContent = riskLevel.toUpperCase();
-            riskEl.className = `display-font text-lg font-bold badge-${riskLevel} px-3 py-1 rounded-lg text-xs`;
+            const aiAnalysis = data.data.ai_analysis || {};
+            const aiScore = aiAnalysis.overall_risk_score || 0;
+            const aiThreat = aiAnalysis.threat_level || 'unknown';
+
+            // Animate AI Risk Score
+            const aiRiskEl = document.getElementById('aiRiskScore');
+            aiRiskEl.classList.add('bounce-in');
+            animateCounter(aiRiskEl, aiScore);
+
+            const threatEl = document.getElementById('aiThreatLevel');
+            threatEl.textContent = aiThreat.toUpperCase();
+            threatEl.className = `text-xl font-bold badge-${aiThreat} px-4 py-2 rounded-lg bounce-in`;
 
             const sslScore = data.data.ssl_security_analysis?.security_score;
             const sslEl = document.getElementById('sslScore');
-            sslEl.textContent = sslScore !== undefined ? sslScore + '/100' : 'N/A';
+            sslEl.classList.add('bounce-in');
+            if (sslScore !== undefined) {
+                setTimeout(() => animateCounter(sslEl, sslScore), 200);
+            } else {
+                sslEl.textContent = 'N/A';
+            }
             if (sslScore >= 85) sslEl.style.color = '#00ff88';
             else if (sslScore >= 70) sslEl.style.color = '#ffcc00';
             else sslEl.style.color = '#ff3366';
 
-            document.getElementById('ipCount').textContent = data.data.geolocation?.total_ips || '0';
+            const ipCountEl = document.getElementById('ipCount');
+            ipCountEl.classList.add('bounce-in');
+            const ipCount = data.data.geolocation?.total_ips || 0;
+            setTimeout(() => {
+                let current = 0;
+                const timer = setInterval(() => {
+                    if (current >= ipCount) {
+                        ipCountEl.textContent = ipCount;
+                        clearInterval(timer);
+                    } else {
+                        current++;
+                        ipCountEl.textContent = current;
+                    }
+                }, 100);
+            }, 400);
 
-            displayRiskAssessment(data);
+            displayAIAnalysis(aiAnalysis);
             displayDNS(data.data.dns_lookup);
             displayWHOIS(data.data.whois_lookup);
             displayGeolocation(data.data.geolocation);
             displaySSL(data.data.ssl_certificate, data.data.ssl_security_analysis);
         }
 
-        function displayRiskAssessment(data) {
-            const da = data.data.domain_analysis || {};
-            const sa = data.data.ssl_security_analysis || {};
-            const ha = data.data.hosting_analysis || {};
-            const sc = data.data.ssl_certificate || {};
-            const wd = data.data.whois_lookup || {};
-            let riskScore = 0;
+        function displayAIAnalysis(ai) {
+            const score = ai.overall_risk_score || 0;
+            const threat = ai.threat_level || 'unknown';
 
-            // Domain
-            let dh = '';
-            (da.insights || []).forEach(ins => {
-                let ic = 'fa-info-circle', cl = 't-cyan';
-                if (/expired|very new/i.test(ins)) { ic = 'fa-exclamation-circle'; cl = 't-red'; riskScore += 25; }
-                else if (/soon|less than/i.test(ins)) { ic = 'fa-exclamation-triangle'; cl = 't-yellow'; riskScore += 10; }
-                else if (/well-established|good/i.test(ins)) { ic = 'fa-check-circle'; cl = 't-green'; }
-                else if (/privacy/i.test(ins)) { ic = 'fa-user-secret'; cl = 't-yellow'; riskScore += 5; }
-                dh += `<div><i class="fas ${ic} mr-2 ${cl}"></i><span class="${cl}">${ins}</span></div>`;
-            });
-            const age = wd.domain_age_days;
-            if (age != null) {
-                if (age > 365) dh += `<div><i class="fas fa-check-circle mr-2 t-green"></i><span class="t-green">Domain age: ${Math.floor(age/365)}y (${age}d)</span></div>`;
-                else { dh += `<div><i class="fas fa-exclamation-triangle mr-2 t-yellow"></i><span class="t-yellow">Domain age: ${age}d</span></div>`; if (age < 90) riskScore += 15; }
+            setTimeout(() => {
+                document.getElementById('aiScoreBar').style.width = score + '%';
+                const barColor = score <= 30 ? '#00ff88' : score <= 60 ? '#ffcc00' : '#ff3366';
+                document.getElementById('aiScoreBar').style.background = barColor;
+                document.getElementById('aiScoreText').textContent = `${score} / 100`;
+                document.getElementById('aiScoreText').style.color = barColor;
+            }, 300);
+
+            const badge = document.getElementById('aiRiskBadge');
+            badge.textContent = threat.toUpperCase() + ' RISK';
+            badge.className = `text-base px-4 py-2 rounded-lg font-bold mono badge-${threat}`;
+
+            const threats = ai.threats_detected || [];
+            const threatsContainer = document.getElementById('aiThreats');
+            threatsContainer.innerHTML = '';
+            if (threats.length > 0) {
+                threats.forEach((t, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'text-base slide-in-right';
+                    div.style.animationDelay = `${i * 0.1}s`;
+                    div.innerHTML = `<i class="fas fa-exclamation-circle mr-2 t-red"></i><span class="t-red">${typeof t === 'object' ? t.factor : t}</span>`;
+                    threatsContainer.appendChild(div);
+                });
+            } else {
+                threatsContainer.innerHTML = '<div class="text-base fade-in-scale"><i class="fas fa-check-circle mr-2 t-green pulse-soft"></i><span class="t-green">No major threats detected</span></div>';
             }
-            if (da.status === 'active') dh += `<div><i class="fas fa-check-circle mr-2 t-green"></i><span class="t-green">Status: ACTIVE</span></div>`;
-            else if (da.status === 'expired') { dh += `<div><i class="fas fa-times-circle mr-2 t-red"></i><span class="t-red">Status: EXPIRED</span></div>`; riskScore += 30; }
-            document.getElementById('domainRiskFactors').innerHTML = dh || '<span class="t-dim">No data</span>';
 
-            // SSL
-            let sh = '';
-            const ss = sa.security_score;
-            if (ss !== undefined) {
-                const c = ss >= 85 ? 't-green' : ss >= 70 ? 't-yellow' : 't-red';
-                sh += `<div><span class="t-dim">Score:</span> <span class="${c}" style="font-weight:700;">${ss}/100</span></div>`;
-                if (ss < 85) riskScore += (100 - ss) * 0.3;
+            const recs = ai.recommendations || [];
+            const recsContainer = document.getElementById('aiRecommendations');
+            recsContainer.innerHTML = '';
+            if (recs.length > 0) {
+                recs.forEach((r, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'text-base slide-in-right';
+                    div.style.animationDelay = `${i * 0.1}s`;
+                    div.innerHTML = `<i class="fas fa-lightbulb mr-2 t-yellow"></i><span class="t-yellow">${r}</span>`;
+                    recsContainer.appendChild(div);
+                });
+            } else {
+                recsContainer.innerHTML = '<div class="text-base fade-in-scale"><i class="fas fa-check-circle mr-2 t-green pulse-soft"></i><span class="t-green">No specific recommendations</span></div>';
             }
-            (sa.issues || []).forEach(iss => {
-                if (iss === 'No major issues detected') sh += `<div><i class="fas fa-check-circle mr-2 t-green"></i><span class="t-green">${iss}</span></div>`;
-                else { const cr = /expired|urgent/i.test(iss); sh += `<div><i class="fas fa-exclamation-circle mr-2 ${cr?'t-red':'t-yellow'}"></i><span class="${cr?'t-red':'t-yellow'}">${iss}</span></div>`; riskScore += cr ? 20 : 8; }
-            });
-            const sd = sa.details || {};
-            if (sd.key_strength) { const w = /weak/i.test(sd.key_strength); sh += `<div><i class="fas ${w?'fa-exclamation-triangle':'fa-key'} mr-2 ${w?'t-red':'t-cyan'}"></i><span class="${w?'t-red':'t-cyan'}">Key: ${sd.key_strength}</span></div>`; }
-            if (sd.protocol_version) { const o = ['SSLv2','SSLv3','TLSv1','TLSv1.1'].includes(sd.protocol_version); sh += `<div><i class="fas fa-shield-alt mr-2 ${o?'t-red':'t-green'}"></i><span class="${o?'t-red':'t-green'}">Protocol: ${sd.protocol_version}</span></div>`; }
-            if (!sc.success) { sh = '<div><i class="fas fa-times-circle mr-2 t-red"></i><span class="t-red">No SSL - NOT secure</span></div>'; riskScore += 30; }
-            document.getElementById('sslRiskFactors').innerHTML = sh || '<span class="t-dim">No data</span>';
 
-            // Hosting
-            let hh = '';
-            if (ha && Object.keys(ha).length) {
-                if (ha.deployment_pattern) { const cdn = /cdn|distributed/i.test(ha.deployment_pattern); hh += `<div><i class="fas ${cdn?'fa-check-circle':'fa-info-circle'} mr-2 ${cdn?'t-green':'t-purple'}"></i><span class="${cdn?'t-green':'t-purple'}">${ha.deployment_pattern}</span></div>`; }
-                (ha.insights || []).forEach(i => { hh += `<div><i class="fas fa-info-circle mr-2 t-purple"></i><span class="t-purple">${i}</span></div>`; });
-                if (ha.unique_countries) hh += `<div><i class="fas fa-globe mr-2 t-cyan"></i><span class="t-cyan">Countries: ${ha.unique_countries}</span></div>`;
-                if (ha.unique_isps) hh += `<div><i class="fas fa-network-wired mr-2 t-cyan"></i><span class="t-cyan">ISPs: ${ha.unique_isps}</span></div>`;
-            }
-            const gd = data.data.geolocation;
-            if (gd?.ip_locations) { for (const [ip,l] of Object.entries(gd.ip_locations)) { if (l.success?.flags) { if (l.flags?.is_proxy) { hh += `<div><i class="fas fa-exclamation-triangle mr-2 t-red"></i><span class="t-red">Proxy/VPN: ${ip}</span></div>`; riskScore += 15; } if (l.flags?.is_hosting) hh += `<div><i class="fas fa-check-circle mr-2 t-green"></i><span class="t-green">Datacenter: ${ip}</span></div>`; } } }
-            document.getElementById('hostingRiskFactors').innerHTML = hh || '<span class="t-dim">No data</span>';
-
-            // Recommendations
-            const recs = [];
-            if (da.status === 'expired') recs.push({t:'Domain expired - do NOT trust',s:'d'});
-            if (wd.days_until_expiration && wd.days_until_expiration < 90 && wd.days_until_expiration > 0) recs.push({t:'Expires soon - verify ownership',s:'w'});
-            if (age && age < 90) recs.push({t:'New domain - exercise caution',s:'w'});
-            if (!sc.success) recs.push({t:'No SSL - avoid sensitive data',s:'d'});
-            (sa.recommendations || []).forEach(r => { if (!/secure|modern/i.test(r)) recs.push({t:r,s:'w'}); });
-            if (ss >= 85 && age > 365 && da.status === 'active') recs.push({t:'Domain is well-established and secure',s:'s'});
-            if (!recs.length) recs.push({t:'No significant risks detected',s:'s'});
-            document.getElementById('riskRecommendations').innerHTML = recs.map(r => {
-                const ic = r.s==='d'?'fa-skull-crossbones':r.s==='w'?'fa-exclamation-triangle':'fa-check-circle';
-                const cl = r.s==='d'?'t-red':r.s==='w'?'t-yellow':'t-green';
-                return `<div><i class="fas ${ic} mr-2 ${cl}"></i><span class="${cl}">${r.t}</span></div>`;
-            }).join('');
-
-            // Score
-            riskScore = Math.min(100, Math.round(riskScore));
-            let bc, rl;
-            if (riskScore <= 20) { bc = '#00ff88'; rl = 'LOW RISK'; }
-            else if (riskScore <= 45) { bc = '#ffcc00'; rl = 'MEDIUM RISK'; }
-            else if (riskScore <= 70) { bc = '#ff3366'; rl = 'HIGH RISK'; }
-            else { bc = '#ff0040'; rl = 'CRITICAL'; }
-            setTimeout(() => { document.getElementById('riskScoreBar').style.width = riskScore+'%'; document.getElementById('riskScoreBar').style.background = bc; }, 300);
-            const rt = document.getElementById('riskScoreText'); rt.textContent = `${riskScore} / 100`; rt.style.color = bc;
-            const ob = document.getElementById('overallRiskBadge'); ob.textContent = rl;
-            ob.className = `text-xs px-3 py-1 rounded-lg font-semibold mono badge-${riskScore<=20?'low':riskScore<=45?'medium':riskScore<=70?'high':'critical'}`;
+            const summaryEl = document.getElementById('aiSummary');
+            summaryEl.textContent = '';
+            const summary = ai.summary || 'AI analysis completed.';
+            let charIndex = 0;
+            const typeWriter = setInterval(() => {
+                if (charIndex < summary.length) {
+                    summaryEl.textContent += summary.charAt(charIndex);
+                    charIndex++;
+                } else {
+                    clearInterval(typeWriter);
+                }
+            }, 20);
         }
 
         function displayDNS(dns) {
@@ -758,7 +1077,7 @@
             if (dns?.dns_records) {
                 for (const [type, rec] of Object.entries(dns.dns_records)) {
                     if (rec.success) {
-                        h += `<div class="mb-5"><div class="flex items-center gap-3 mb-2"><span class="record-chip">${type}</span><span class="text-xs" style="color:#2d3548;">${rec.count} record(s) &middot; ${rec.query_time_ms}ms</span></div><div class="terminal-block p-4">`;
+                        h += `<div class="mb-6"><div class="flex items-center gap-4 mb-3"><span class="record-chip">${type}</span><span class="text-base font-semibold" style="color:#6b7a94;">${rec.count} record(s) • ${rec.query_time_ms}ms</span></div><div class="terminal-block">`;
                         rec.records.forEach(r => {
                             if (type==='A'||type==='AAAA') h += `<div><span class="t-dim">ip:</span> <span class="t-green">${r.ip}</span> <span class="t-dim">ttl:</span> <span class="t-cyan">${r.ttl}s</span></div>`;
                             else if (type==='MX') h += `<div><span class="t-dim">pri:</span> <span class="t-yellow">${r.priority}</span> <span class="t-dim">srv:</span> <span class="t-green">${r.mail_server}</span></div>`;
@@ -766,20 +1085,18 @@
                             else if (type==='TXT') h += `<div><span class="t-dim">txt:</span> <span class="t-green" style="word-break:break-all;">${r.data}</span></div>`;
                         });
                         h += `</div></div>`;
-                    } else {
-                        h += `<div class="mb-3 flex items-center gap-2"><span class="record-chip" style="color:#ff3366;border-color:rgba(255,51,102,0.2);background:rgba(255,51,102,0.05);">${type}</span><span class="text-xs" style="color:#3a4258;">${rec.error}</span></div>`;
                     }
                 }
             }
-            c.innerHTML = h || '<p class="text-sm" style="color:#2d3548;">No DNS records found</p>';
+            c.innerHTML = h || '<p class="text-base font-semibold" style="color:#6b7a94;">No DNS records found</p>';
         }
 
         function displayWHOIS(w) {
             const c = document.getElementById('whoisContent');
-            if (!w?.success) { c.innerHTML = '<p class="text-sm" style="color:#2d3548;">WHOIS data not available</p>'; return; }
-            c.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div class="terminal-block p-5">
-                    <div class="flex items-center gap-2 mb-3"><i class="fas fa-calendar-alt text-xs" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Registration</span></div>
+            if (!w?.success) { c.innerHTML = '<p class="text-base font-semibold" style="color:#6b7a94;">WHOIS data not available</p>'; return; }
+            c.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="terminal-block">
+                    <div class="flex items-center gap-3 mb-4"><i class="fas fa-calendar-alt text-base" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Registration</span></div>
                     <div><span class="t-dim">registrar :</span> <span class="t-green">${w.registrar||'N/A'}</span></div>
                     <div><span class="t-dim">created   :</span> <span class="t-green">${w.creation_date||'N/A'}</span></div>
                     <div><span class="t-dim">expires   :</span> <span class="t-green">${w.expiration_date||'N/A'}</span></div>
@@ -787,13 +1104,13 @@
                     <div><span class="t-dim">age       :</span> <span class="t-cyan">${w.domain_age_days||'N/A'} days</span></div>
                     <div><span class="t-dim">exp_in    :</span> <span class="${(w.days_until_expiration<30)?'t-red':'t-cyan'}">${w.days_until_expiration||'N/A'} days</span></div>
                 </div>
-                <div class="terminal-block p-5">
-                    <div class="flex items-center gap-2 mb-3"><i class="fas fa-user text-xs" style="color:#a855f7;"></i><span class="section-label" style="color:#a855f7;">Registrant</span></div>
+                <div class="terminal-block">
+                    <div class="flex items-center gap-3 mb-4"><i class="fas fa-user text-base" style="color:#a855f7;"></i><span class="section-label" style="color:#a855f7;">Registrant</span></div>
                     <div><span class="t-dim">org     :</span> <span class="t-green">${w.registrant?.organization||'N/A'}</span></div>
                     <div><span class="t-dim">country :</span> <span class="t-green">${w.registrant?.country||'N/A'}</span></div>
                     <div><span class="t-dim">email   :</span> <span class="t-green">${w.contacts?.registrant_email||'N/A'}</span></div>
-                    <div class="mt-3 pt-3" style="border-top:1px solid rgba(45,53,72,0.3);">
-                        <div class="flex items-center gap-2 mb-2"><i class="fas fa-dns text-xs" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Name Servers</span></div>
+                    <div class="mt-4 pt-4" style="border-top:2px solid rgba(54,65,96,0.4);">
+                        <div class="flex items-center gap-3 mb-3"><i class="fas fa-dns text-base" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Name Servers</span></div>
                         ${(w.name_servers||[]).map(ns=>`<div><span class="t-dim">ns:</span> <span class="t-green">${ns}</span></div>`).join('')}
                     </div>
                 </div>
@@ -802,27 +1119,49 @@
 
         function displayGeolocation(geo) {
             const c = document.getElementById('geoContent');
-            if (!geo?.ip_locations) { c.innerHTML = '<p class="text-sm" style="color:#2d3548;">Geolocation data not available</p>'; return; }
+            if (!geo?.ip_locations) { c.innerHTML = '<p class="text-base font-semibold" style="color:#6b7a94;">Geolocation data not available</p>'; return; }
+
+            // Initialize map
+            if (!geoMap) {
+                geoMap = L.map('map').setView([20, 0], 2);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(geoMap);
+            } else {
+                geoMap.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        geoMap.removeLayer(layer);
+                    }
+                });
+            }
+
             let h = '';
             for (const [ip, d] of Object.entries(geo.ip_locations)) {
                 if (d.success) {
-                    h += `<div class="mb-5"><div class="mb-2"><span class="record-chip">${ip}</span></div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="terminal-block p-4">
-                            <div class="flex items-center gap-2 mb-2"><i class="fas fa-map-pin text-xs" style="color:#ff8c00;"></i><span class="section-label" style="color:#ff8c00;">Location</span></div>
+                    const lat = d.coordinates.latitude;
+                    const lon = d.coordinates.longitude;
+
+                    // Add marker to map
+                    const marker = L.marker([lat, lon]).addTo(geoMap);
+                    marker.bindPopup(`<strong style="font-size: 16px;">${ip}</strong><br><span style="font-size: 14px;">${d.location.city}, ${d.location.country}</span>`);
+
+                    h += `<div class="mb-6"><div class="mb-3"><span class="record-chip">${ip}</span></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div class="terminal-block">
+                            <div class="flex items-center gap-3 mb-3"><i class="fas fa-map-pin text-base" style="color:#ff8c00;"></i><span class="section-label" style="color:#ff8c00;">Location</span></div>
                             <div><span class="t-dim">city    :</span> <span class="t-green">${d.location.city}</span></div>
                             <div><span class="t-dim">country :</span> <span class="t-green">${d.location.country}</span></div>
-                            <div><span class="t-dim">coords  :</span> <span class="t-cyan">${d.coordinates.latitude}, ${d.coordinates.longitude}</span></div>
+                            <div><span class="t-dim">coords  :</span> <span class="t-cyan">${lat}, ${lon}</span></div>
                             <div><span class="t-dim">tz      :</span> <span class="t-green">${d.location.timezone}</span></div>
                         </div>
-                        <div class="terminal-block p-4">
-                            <div class="flex items-center gap-2 mb-2"><i class="fas fa-network-wired text-xs" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Network</span></div>
+                        <div class="terminal-block">
+                            <div class="flex items-center gap-3 mb-3"><i class="fas fa-network-wired text-base" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Network</span></div>
                             <div><span class="t-dim">isp  :</span> <span class="t-green">${d.network.isp}</span></div>
                             <div><span class="t-dim">asn  :</span> <span class="t-cyan">${d.network.as_number}</span></div>
                             <div><span class="t-dim">org  :</span> <span class="t-green">${d.network.organization}</span></div>
                         </div>
-                        <div class="terminal-block p-4">
-                            <div class="flex items-center gap-2 mb-2"><i class="fas fa-flag text-xs" style="color:#a855f7;"></i><span class="section-label" style="color:#a855f7;">Flags</span></div>
+                        <div class="terminal-block">
+                            <div class="flex items-center gap-3 mb-3"><i class="fas fa-flag text-base" style="color:#a855f7;"></i><span class="section-label" style="color:#a855f7;">Flags</span></div>
                             <div><span class="${d.flags.is_hosting?'t-green':'t-dim'}">[${d.flags.is_hosting?'x':' '}]</span> <span class="t-white">Hosting/DC</span></div>
                             <div><span class="${d.flags.is_proxy?'t-red':'t-dim'}">[${d.flags.is_proxy?'x':' '}]</span> <span class="t-white">Proxy/VPN</span></div>
                             <div><span class="${d.flags.is_mobile?'t-yellow':'t-dim'}">[${d.flags.is_mobile?'x':' '}]</span> <span class="t-white">Mobile</span></div>
@@ -830,16 +1169,28 @@
                     </div></div>`;
                 }
             }
-            c.innerHTML = h || '<p class="text-sm" style="color:#2d3548;">No geolocation data</p>';
+
+            // Fit map to markers
+            const markers = [];
+            for (const [ip, d] of Object.entries(geo.ip_locations)) {
+                if (d.success) {
+                    markers.push([d.coordinates.latitude, d.coordinates.longitude]);
+                }
+            }
+            if (markers.length > 0) {
+                geoMap.fitBounds(markers);
+            }
+
+            c.innerHTML = h || '<p class="text-base font-semibold" style="color:#6b7a94;">No geolocation data</p>';
         }
 
         function displaySSL(ssl, an) {
             const c = document.getElementById('sslContent');
-            if (!ssl?.success) { c.innerHTML = '<p class="text-sm" style="color:#2d3548;">SSL certificate not available</p>'; return; }
+            if (!ssl?.success) { c.innerHTML = '<p class="text-base font-semibold" style="color:#6b7a94;">SSL certificate not available</p>'; return; }
             const ct = ssl.certificate;
-            c.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div class="terminal-block p-5">
-                    <div class="flex items-center gap-2 mb-3"><i class="fas fa-certificate text-xs" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Certificate</span></div>
+            c.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="terminal-block">
+                    <div class="flex items-center gap-3 mb-4"><i class="fas fa-certificate text-base" style="color:#00d4ff;"></i><span class="section-label" style="color:#00d4ff;">Certificate</span></div>
                     <div><span class="t-dim">cn        :</span> <span class="t-green">${ct.subject.commonName}</span></div>
                     <div><span class="t-dim">issuer    :</span> <span class="t-green">${ct.issuer.organizationName}</span></div>
                     <div><span class="t-dim">valid_from:</span> <span class="t-green">${new Date(ct.valid_from).toLocaleDateString()}</span></div>
@@ -847,14 +1198,14 @@
                     <div><span class="t-dim">remaining :</span> <span class="${ct.days_until_expiration<30?'t-red':'t-cyan'}">${ct.days_until_expiration} days</span></div>
                     <div><span class="t-dim">san_count :</span> <span class="t-cyan">${ct.san_count} domains</span></div>
                 </div>
-                <div class="terminal-block p-5">
-                    <div class="flex items-center gap-2 mb-3"><i class="fas fa-tachometer-alt text-xs" style="color:#00ff88;"></i><span class="section-label" style="color:#00ff88;">Security</span></div>
-                    <div><span class="t-dim">score    :</span> <span class="${(an?.security_score>=85)?'t-green':(an?.security_score>=70)?'t-yellow':'t-red'}" style="font-size:16px;font-weight:700;">${an?.security_score||'N/A'}/100</span></div>
-                    <div><span class="t-dim">risk     :</span> <span class="badge-${an?.risk_level} px-2 py-0.5 rounded text-xs mono">${an?.risk_level?.toUpperCase()}</span></div>
+                <div class="terminal-block">
+                    <div class="flex items-center gap-3 mb-4"><i class="fas fa-tachometer-alt text-base" style="color:#00ff88;"></i><span class="section-label" style="color:#00ff88;">Security</span></div>
+                    <div><span class="t-dim">score    :</span> <span class="${(an?.security_score>=85)?'t-green':(an?.security_score>=70)?'t-yellow':'t-red'}" style="font-size:20px;font-weight:800;">${an?.security_score||'N/A'}/100</span></div>
+                    <div><span class="t-dim">risk     :</span> <span class="badge-${an?.risk_level} px-3 py-1 rounded-lg text-sm mono">${an?.risk_level?.toUpperCase()}</span></div>
                     <div><span class="t-dim">protocol :</span> <span class="t-green">${ssl.ssl_version}</span></div>
                     <div><span class="t-dim">key      :</span> <span class="t-green">${ct.key_type} ${ct.key_size}-bit</span></div>
                     <div><span class="t-dim">cipher   :</span> <span class="t-green">${ssl.cipher_suite.name}</span></div>
-                    ${an?.issues?.length ? `<div class="mt-3 pt-3" style="border-top:1px solid rgba(45,53,72,0.3);">${an.issues.map(i=>`<div class="t-${i==='No major issues detected'?'green':'red'} text-xs">[${i==='No major issues detected'?'+':'-'}] ${i}</div>`).join('')}</div>` : ''}
+                    ${an?.issues?.length ? `<div class="mt-4 pt-4" style="border-top:2px solid rgba(54,65,96,0.4);">${an.issues.map(i=>`<div class="t-${i==='No major issues detected'?'green':'red'} text-sm">[${i==='No major issues detected'?'+':'-'}] ${i}</div>`).join('')}</div>` : ''}
                 </div>
             </div>`;
         }
@@ -864,7 +1215,40 @@
             document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
             document.getElementById(name + 'Tab').classList.remove('hidden');
             document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+
+            // Refresh map when geo tab is shown
+            if (name === 'geo' && geoMap) {
+                setTimeout(() => geoMap.invalidateSize(), 100);
+            }
         }
+
+        // Particle effect
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.setProperty('--drift', (Math.random() - 0.5) * 100 + 'px');
+            particle.style.animationDelay = Math.random() * 2 + 's';
+            document.getElementById('particles').appendChild(particle);
+
+            setTimeout(() => particle.remove(), 4000);
+        }
+
+        // Create particles periodically
+        setInterval(createParticle, 500);
+
+        // Add hover effects to stat cards
+        document.addEventListener('DOMContentLoaded', () => {
+            const statCards = document.querySelectorAll('.stat-card');
+            statCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px) scale(1.02)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                });
+            });
+        });
     </script>
 </body>
 </html>

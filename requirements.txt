@@ -14,12 +14,17 @@ python-whois==0.9.4
 python-dotenv==1.0.1
 validators==0.34.0
 
-# Database (for future phases)
+# Database
 sqlalchemy==2.0.35
-pymongo==4.10.0
 
 # Utilities
 python-dateutil==2.9.0
+
+# Rate Limiting
+slowapi==0.1.9
+
+# Caching
+cachetools==5.5.0
 
 # Geolocation
 geoip2==4.8.0

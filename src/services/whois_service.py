@@ -3,13 +3,20 @@ WHOIS Lookup Service for ExposeChain
 Handles WHOIS queries and domain registration data
 """
 import whois
+import logging
 from datetime import datetime
 from typing import Dict, Any, Optional
+from cachetools import TTLCache
+
+logger = logging.getLogger("exposechain")
 
 
 class WHOISService:
     """Service for WHOIS lookups and domain registration analysis"""
-    
+
+    def __init__(self):
+        self._cache = TTLCache(maxsize=128, ttl=300)  # 5 min TTL
+
     def lookup_whois(self, domain: str) -> Dict[str, Any]:
         """
         Perform WHOIS lookup for a domain
@@ -20,6 +27,11 @@ class WHOISService:
         Returns:
             Dictionary with WHOIS results
         """
+        cache_key = f"whois:{domain}"
+        if cache_key in self._cache:
+            logger.debug("Cache hit for %s", cache_key)
+            return self._cache[cache_key]
+
         try:
             # Perform WHOIS lookup
             w = whois.whois(domain)
@@ -53,7 +65,8 @@ class WHOISService:
             # Calculate days until expiration
             if result["expiration_date"]:
                 result["days_until_expiration"] = self._calculate_days_until(result["expiration_date"])
-            
+
+            self._cache[cache_key] = result
             return result
             
         except Exception as e:

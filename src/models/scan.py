@@ -4,6 +4,7 @@ Pydantic models for input validation
 from pydantic import BaseModel, Field, validator
 from typing import Literal
 import validators
+from src.utils.validators import validate_target_not_internal
 
 
 class ScanRequest(BaseModel):
@@ -22,6 +23,8 @@ class ScanRequest(BaseModel):
 
         # Check if it's a valid domain
         if validators.domain(v):
+            # SSRF protection - block internal/private IPs
+            validate_target_not_internal(v)
             return v
 
         # If not a valid domain, raise error

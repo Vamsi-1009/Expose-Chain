@@ -2,7 +2,7 @@
 Configuration settings for ExposeChain
 """
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, List
 
 
 class Settings(BaseSettings):
@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # Database
     MONGO_URL: str = "mongodb://localhost:27017/exposechain"
     
+    # CORS
+    CORS_ORIGINS: List[str] = ["http://localhost:8000", "http://127.0.0.1:8000"]
+
     # Application
     DEBUG: bool = True
     HOST: str = "0.0.0.0"
