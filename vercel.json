@@ -21,7 +21,6 @@
     }
   ],
   "env": {
-    "DATABASE_URL": "@database-url",
     "CORS_ORIGINS": "@cors-origins"
   },
   "build": {

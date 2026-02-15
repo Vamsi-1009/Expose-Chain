@@ -11,7 +11,6 @@ from src.api import router
 from src.config import settings
 from src.utils.logging_config import setup_logging
 from src.utils.rate_limiter import limiter
-from src.models.database import init_db
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -44,13 +43,6 @@ app.add_middleware(
 static_path = Path("static")
 if static_path.exists():
     app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-# Initialize database on startup
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database tables on startup"""
-    init_db()
 
 
 # Include API routes

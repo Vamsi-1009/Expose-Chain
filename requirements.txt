@@ -14,10 +14,6 @@ python-whois==0.9.4
 python-dotenv==1.0.1
 validators==0.34.0
 
-# Database
-sqlalchemy==2.0.35
-psycopg2-binary==2.9.9
-
 # Utilities
 python-dateutil==2.9.0
 

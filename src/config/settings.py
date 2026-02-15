@@ -14,13 +14,6 @@ class Settings(BaseSettings):
         extra="ignore"  # Ignore extra fields from .env file
     )
 
-    # Database Configuration (Supabase PostgreSQL)
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/exposechain"
-
-    # Supabase Optional Keys
-    SUPABASE_URL: Optional[str] = None
-    SUPABASE_KEY: Optional[str] = None
-
     # CORS Configuration (comma-separated string in .env)
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8000,http://127.0.0.1:8000,http://127.0.0.1:3000"
 
