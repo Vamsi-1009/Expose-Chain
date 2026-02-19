@@ -454,34 +454,6 @@
             color: #8b9bb0;
         }
 
-        /* History sidebar */
-        .history-sidebar {
-            position: fixed;
-            right: 0;
-            top: 0;
-            bottom: 0;
-            width: 380px;
-            background: rgba(10, 14, 26, 0.98);
-            border-left: 2px solid rgba(0, 255, 136, 0.3);
-            backdrop-filter: blur(25px);
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-            z-index: 1000;
-            overflow-y: auto;
-            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7);
-        }
-        .history-sidebar.open {
-            transform: translateX(0);
-        }
-        .history-item {
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .history-item:hover {
-            background: rgba(0, 255, 136, 0.08);
-            border-color: rgba(0, 255, 136, 0.4) !important;
-        }
-
         /* Map container */
         #map {
             height: 450px;
@@ -534,29 +506,6 @@
     <div class="ambient-bg"></div>
     <div class="grid-pattern"></div>
     <div id="particles"></div>
-
-    <!-- History Toggle Button -->
-    <button onclick="toggleHistory()" class="fixed top-24 right-6 z-50 w-14 h-14 rounded-xl flex items-center justify-center glass-card hover:scale-110 transition-transform pulse-glow fade-in-scale" style="border-color: rgba(0,255,136,0.4); animation-delay: 0.5s;">
-        <i class="fas fa-history text-xl hover-glow" style="color: #00ff88;"></i>
-    </button>
-
-    <!-- History Sidebar -->
-    <div id="historySidebar" class="history-sidebar">
-        <div class="p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="display-font text-2xl font-bold" style="color: #00ff88;">SCAN HISTORY</h3>
-                <button onclick="toggleHistory()" class="w-10 h-10 rounded-lg flex items-center justify-center hover:scale-110 transition-transform" style="background: rgba(255,51,102,0.2); border: 2px solid rgba(255,51,102,0.4);">
-                    <i class="fas fa-times text-lg" style="color: #ff3366;"></i>
-                </button>
-            </div>
-            <div id="historyList" class="space-y-3">
-                <div class="text-center py-10">
-                    <i class="fas fa-spinner fa-spin text-3xl" style="color: #4a5a74;"></i>
-                    <p class="text-sm mt-3 font-semibold" style="color: #6b7a94;">Loading history...</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- ===== HEADER ===== -->
     <header class="border-b sticky top-0 z-40 slide-down">
@@ -831,57 +780,6 @@
             }
             addLine();
             loadingInterval = setInterval(addLine, 900);
-        }
-
-        function toggleHistory() {
-            const sidebar = document.getElementById('historySidebar');
-            sidebar.classList.toggle('open');
-            if (sidebar.classList.contains('open')) {
-                loadHistory();
-            }
-        }
-
-        async function loadHistory() {
-            try {
-                const res = await fetch('/api/history?limit=20');
-                const data = await res.json();
-                const list = document.getElementById('historyList');
-                if (data.history && data.history.length > 0) {
-                    list.innerHTML = data.history.map(item => `
-                        <div class="history-item p-5 rounded-xl border-2" style="background: rgba(20,26,42,0.7); border-color: rgba(54,65,96,0.4);" onclick="loadScanReport('${item.scan_id}')">
-                            <div class="flex items-center gap-3 mb-3">
-                                <span class="mono text-base font-bold" style="color: #00ff88;">${item.target}</span>
-                                <span class="${item.success ? 'badge-low' : 'badge-high'} text-xs px-3 py-1 rounded-lg mono">${item.success ? 'OK' : 'FAIL'}</span>
-                            </div>
-                            <div class="flex items-center gap-4 text-sm" style="color: #8b9bb0;">
-                                <span><i class="far fa-clock mr-2"></i>${new Date(item.created_at).toLocaleString()}</span>
-                                <span class="mono font-bold">${item.scan_type.toUpperCase()}</span>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    list.innerHTML = '<div class="text-center py-12"><p class="text-base font-semibold" style="color: #6b7a94;">No scan history yet</p></div>';
-                }
-            } catch (e) {
-                document.getElementById('historyList').innerHTML = '<div class="text-center py-12"><p class="text-base font-semibold" style="color: #ff3366;">Failed to load history</p></div>';
-            }
-        }
-
-        async function loadScanReport(scanId) {
-            try {
-                const res = await fetch(`/api/report/${scanId}`);
-                const report = await res.json();
-                if (report.data_json) {
-                    const data = JSON.parse(report.data_json);
-                    scanData = { target: report.target, target_type: report.target_type, data: data, success: true };
-                    document.getElementById('targetInput').value = report.target;
-                    displayResults(scanData);
-                    document.getElementById('resultsSection').classList.remove('hidden');
-                    toggleHistory();
-                }
-            } catch (e) {
-                console.error('Failed to load report:', e);
-            }
         }
 
         function startScan() {
