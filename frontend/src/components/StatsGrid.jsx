@@ -27,29 +27,29 @@ export default function StatsGrid({ aiScore, threatLevel, sslScore, ipCount }) {
   const animatedSsl = useCountUp(sslScore, 200)
   const animatedIp = useCountUp(ipCount, 400)
 
-  const sslColor = sslScore === undefined ? '#8b9bb0' : sslScore >= 85 ? '#00ff88' : sslScore >= 70 ? '#ffcc00' : '#ff3366'
+  const sslColor = sslScore === undefined ? '#94a3b8' : sslScore >= 85 ? '#16a34a' : sslScore >= 70 ? '#d97706' : '#dc2626'
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-10">
-      <div className="stat-card p-6 animate-in" style={{ '--accent-color': '#00d4ff' }}>
+      <div className="stat-card p-6 animate-in" style={{ '--accent-color': '#4f46e5' }}>
         <p className="section-label mb-2">AI Risk Score</p>
-        <p className="display-font text-3xl font-bold" style={{ color: '#00d4ff' }}>{animatedAi}/100</p>
+        <p className="display-font text-3xl font-bold" style={{ color: '#4f46e5' }}>{animatedAi}/100</p>
       </div>
-      <div className="stat-card p-6 animate-in" style={{ '--accent-color': '#ffcc00' }}>
+      <div className="stat-card p-6 animate-in" style={{ '--accent-color': '#d97706' }}>
         <p className="section-label mb-2">Threat Level</p>
         <p className={`text-lg font-bold badge-${threatLevel || 'unknown'} inline-block px-3 py-1 rounded-lg`}>
           {(threatLevel || '-').toUpperCase()}
         </p>
       </div>
-      <div className="stat-card p-6 animate-in" style={{ '--accent-color': '#00ff88' }}>
+      <div className="stat-card p-6 animate-in" style={{ '--accent-color': '#16a34a' }}>
         <p className="section-label mb-2">SSL Score</p>
         <p className="display-font text-2xl font-bold" style={{ color: sslColor }}>
           {sslScore === undefined ? 'N/A' : `${animatedSsl}`}
         </p>
       </div>
-      <div className="stat-card p-6 animate-in" style={{ '--accent-color': '#a855f7' }}>
+      <div className="stat-card p-6 animate-in" style={{ '--accent-color': '#7c3aed' }}>
         <p className="section-label mb-2">IPs Found</p>
-        <p className="display-font text-2xl font-bold" style={{ color: '#a855f7' }}>{animatedIp}</p>
+        <p className="display-font text-2xl font-bold" style={{ color: '#7c3aed' }}>{animatedIp}</p>
       </div>
     </div>
   )

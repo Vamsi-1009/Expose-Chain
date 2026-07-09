@@ -1,6 +1,6 @@
 export default function SslTab({ ssl, analysis: an }) {
   if (!ssl?.success) {
-    return <p className="text-sm font-semibold" style={{ color: '#6b7a94' }}>SSL certificate not available</p>
+    return <p className="text-sm font-semibold" style={{ color: '#64748b' }}>SSL certificate not available</p>
   }
   const ct = ssl.certificate
 
@@ -8,8 +8,8 @@ export default function SslTab({ ssl, analysis: an }) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       <div className="terminal-block">
         <div className="flex items-center gap-2 mb-3">
-          <i className="fas fa-certificate text-sm" style={{ color: '#00d4ff' }}></i>
-          <span className="section-label" style={{ color: '#00d4ff' }}>Certificate</span>
+          <i className="fas fa-certificate text-sm" style={{ color: '#0284c7' }}></i>
+          <span className="section-label" style={{ color: '#0284c7' }}>Certificate</span>
         </div>
         <div><span className="t-dim">cn        :</span> <span className="t-green">{ct.subject.commonName}</span></div>
         <div><span className="t-dim">issuer    :</span> <span className="t-green">{ct.issuer.organizationName}</span></div>
@@ -26,8 +26,8 @@ export default function SslTab({ ssl, analysis: an }) {
       </div>
       <div className="terminal-block">
         <div className="flex items-center gap-2 mb-3">
-          <i className="fas fa-tachometer-alt text-sm" style={{ color: '#00ff88' }}></i>
-          <span className="section-label" style={{ color: '#00ff88' }}>Security</span>
+          <i className="fas fa-tachometer-alt text-sm" style={{ color: '#4f46e5' }}></i>
+          <span className="section-label" style={{ color: '#4f46e5' }}>Security</span>
         </div>
         <div>
           <span className="t-dim">score    :</span>{' '}
@@ -46,7 +46,7 @@ export default function SslTab({ ssl, analysis: an }) {
         <div><span className="t-dim">key      :</span> <span className="t-green">{ct.key_type} {ct.key_size}-bit</span></div>
         <div><span className="t-dim">cipher   :</span> <span className="t-green">{ssl.cipher_suite.name}</span></div>
         {an?.issues?.length > 0 && (
-          <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(54,65,96,0.4)' }}>
+          <div className="mt-3 pt-3" style={{ borderTop: '1px solid #e2e8f0' }}>
             {an.issues.map((issue, i) => (
               <div key={i} className={`text-xs ${issue === 'No major issues detected' ? 't-green' : 't-red'}`}>
                 [{issue === 'No major issues detected' ? '+' : '-'}] {issue}

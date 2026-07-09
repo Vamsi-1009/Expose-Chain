@@ -23,7 +23,7 @@ export default function SearchBar({ onScan, scanning }) {
       </div>
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1 relative">
-          <div className="absolute left-5 top-1/2 -translate-y-1/2 mono text-base" style={{ color: '#4a5a74' }}>
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 mono text-base" style={{ color: '#94a3b8' }}>
             <i className="fas fa-terminal"></i>
           </div>
           <input
@@ -32,7 +32,7 @@ export default function SearchBar({ onScan, scanning }) {
             onChange={(e) => setTarget(e.target.value)}
             placeholder="Enter domain name (e.g. google.com)"
             className={`search-input w-full pl-14 pr-5 py-4 text-base ${shake ? 'shake' : ''}`}
-            style={shake ? { borderColor: '#ff3366' } : undefined}
+            style={shake ? { borderColor: '#dc2626' } : undefined}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             autoComplete="off"
             spellCheck="false"

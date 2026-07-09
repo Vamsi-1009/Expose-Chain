@@ -1,14 +1,14 @@
 export default function WhoisTab({ whois: w }) {
   if (!w?.success) {
-    return <p className="text-sm font-semibold" style={{ color: '#6b7a94' }}>WHOIS data not available</p>
+    return <p className="text-sm font-semibold" style={{ color: '#64748b' }}>WHOIS data not available</p>
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       <div className="terminal-block">
         <div className="flex items-center gap-2 mb-3">
-          <i className="fas fa-calendar-alt text-sm" style={{ color: '#00d4ff' }}></i>
-          <span className="section-label" style={{ color: '#00d4ff' }}>Registration</span>
+          <i className="fas fa-calendar-alt text-sm" style={{ color: '#0284c7' }}></i>
+          <span className="section-label" style={{ color: '#0284c7' }}>Registration</span>
         </div>
         <div><span className="t-dim">registrar :</span> <span className="t-green">{w.registrar || 'N/A'}</span></div>
         <div><span className="t-dim">created   :</span> <span className="t-green">{w.creation_date || 'N/A'}</span></div>
@@ -22,16 +22,16 @@ export default function WhoisTab({ whois: w }) {
       </div>
       <div className="terminal-block">
         <div className="flex items-center gap-2 mb-3">
-          <i className="fas fa-user text-sm" style={{ color: '#a855f7' }}></i>
-          <span className="section-label" style={{ color: '#a855f7' }}>Registrant</span>
+          <i className="fas fa-user text-sm" style={{ color: '#7c3aed' }}></i>
+          <span className="section-label" style={{ color: '#7c3aed' }}>Registrant</span>
         </div>
         <div><span className="t-dim">org     :</span> <span className="t-green">{w.registrant?.organization || 'N/A'}</span></div>
         <div><span className="t-dim">country :</span> <span className="t-green">{w.registrant?.country || 'N/A'}</span></div>
         <div><span className="t-dim">email   :</span> <span className="t-green">{w.contacts?.registrant_email || 'N/A'}</span></div>
-        <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(54,65,96,0.4)' }}>
+        <div className="mt-3 pt-3" style={{ borderTop: '1px solid #e2e8f0' }}>
           <div className="flex items-center gap-2 mb-2">
-            <i className="fas fa-dns text-sm" style={{ color: '#00d4ff' }}></i>
-            <span className="section-label" style={{ color: '#00d4ff' }}>Name Servers</span>
+            <i className="fas fa-dns text-sm" style={{ color: '#0284c7' }}></i>
+            <span className="section-label" style={{ color: '#0284c7' }}>Name Servers</span>
           </div>
           {(w.name_servers || []).map((ns, i) => (
             <div key={i}><span className="t-dim">ns:</span> <span className="t-green">{ns}</span></div>

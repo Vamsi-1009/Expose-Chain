@@ -42,7 +42,7 @@ export default function LoadingTerminal({ done }) {
         <div className="flex flex-col items-center">
           <div className="flex items-center gap-3 mb-6">
             <div className="status-dot"></div>
-            <span className="display-font text-lg font-semibold tracking-widest" style={{ color: '#00ff88' }}>
+            <span className="display-font text-lg font-semibold tracking-widest" style={{ color: '#4f46e5' }}>
               AI ANALYSIS IN PROGRESS
             </span>
           </div>

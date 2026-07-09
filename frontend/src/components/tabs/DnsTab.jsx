@@ -1,6 +1,6 @@
 export default function DnsTab({ dns }) {
   if (!dns?.dns_records) {
-    return <p className="text-sm font-semibold" style={{ color: '#6b7a94' }}>No DNS records found</p>
+    return <p className="text-sm font-semibold" style={{ color: '#64748b' }}>No DNS records found</p>
   }
 
   return (
@@ -11,7 +11,7 @@ export default function DnsTab({ dns }) {
           <div key={type} className="mb-5">
             <div className="flex items-center gap-3 mb-2">
               <span className="record-chip">{type}</span>
-              <span className="text-sm font-semibold" style={{ color: '#6b7a94' }}>
+              <span className="text-sm font-semibold" style={{ color: '#64748b' }}>
                 {rec.count} record(s) &bull; {rec.query_time_ms}ms
               </span>
             </div>

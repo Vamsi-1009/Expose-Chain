@@ -50,7 +50,7 @@ export default function GeoTab({ geo, active }) {
   }, [])
 
   if (!geo?.ip_locations) {
-    return <p className="text-sm font-semibold" style={{ color: '#6b7a94' }}>Geolocation data not available</p>
+    return <p className="text-sm font-semibold" style={{ color: '#64748b' }}>Geolocation data not available</p>
   }
 
   return (
@@ -64,8 +64,8 @@ export default function GeoTab({ geo, active }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="terminal-block">
                 <div className="flex items-center gap-2 mb-2">
-                  <i className="fas fa-map-pin text-sm" style={{ color: '#ff8c00' }}></i>
-                  <span className="section-label" style={{ color: '#ff8c00' }}>Location</span>
+                  <i className="fas fa-map-pin text-sm" style={{ color: '#ea580c' }}></i>
+                  <span className="section-label" style={{ color: '#ea580c' }}>Location</span>
                 </div>
                 <div><span className="t-dim">city    :</span> <span className="t-green">{d.location.city}</span></div>
                 <div><span className="t-dim">country :</span> <span className="t-green">{d.location.country}</span></div>
@@ -74,8 +74,8 @@ export default function GeoTab({ geo, active }) {
               </div>
               <div className="terminal-block">
                 <div className="flex items-center gap-2 mb-2">
-                  <i className="fas fa-network-wired text-sm" style={{ color: '#00d4ff' }}></i>
-                  <span className="section-label" style={{ color: '#00d4ff' }}>Network</span>
+                  <i className="fas fa-network-wired text-sm" style={{ color: '#0284c7' }}></i>
+                  <span className="section-label" style={{ color: '#0284c7' }}>Network</span>
                 </div>
                 <div><span className="t-dim">isp  :</span> <span className="t-green">{d.network.isp}</span></div>
                 <div><span className="t-dim">asn  :</span> <span className="t-cyan">{d.network.as_number}</span></div>
@@ -83,8 +83,8 @@ export default function GeoTab({ geo, active }) {
               </div>
               <div className="terminal-block">
                 <div className="flex items-center gap-2 mb-2">
-                  <i className="fas fa-flag text-sm" style={{ color: '#a855f7' }}></i>
-                  <span className="section-label" style={{ color: '#a855f7' }}>Flags</span>
+                  <i className="fas fa-flag text-sm" style={{ color: '#7c3aed' }}></i>
+                  <span className="section-label" style={{ color: '#7c3aed' }}>Flags</span>
                 </div>
                 <div><span className={d.flags.is_hosting ? 't-green' : 't-dim'}>[{d.flags.is_hosting ? 'x' : ' '}]</span> <span className="t-white">Hosting/DC</span></div>
                 <div><span className={d.flags.is_proxy ? 't-red' : 't-dim'}>[{d.flags.is_proxy ? 'x' : ' '}]</span> <span className="t-white">Proxy/VPN</span></div>
