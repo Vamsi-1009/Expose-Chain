@@ -44,6 +44,11 @@ static_path = Path("static")
 if static_path.exists():
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Mount the built React frontend's JS/CSS assets
+frontend_assets_path = Path("frontend/dist/assets")
+if frontend_assets_path.exists():
+    app.mount("/assets", StaticFiles(directory=str(frontend_assets_path)), name="frontend-assets")
+
 
 # Include API routes
 app.include_router(router)
@@ -52,12 +57,12 @@ app.include_router(router)
 # Serve the frontend
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def serve_frontend():
-    """Serve the web interface"""
-    template_path = Path("templates/index.html")
-    if template_path.exists():
-        with open(template_path, "r", encoding="utf-8") as f:
+    """Serve the built React web interface"""
+    frontend_index = Path("frontend/dist/index.html")
+    if frontend_index.exists():
+        with open(frontend_index, "r", encoding="utf-8") as f:
             return f.read()
-    return "<h1>ExposeChain API</h1><p>Frontend template not found. Visit <a href='/docs'>/docs</a> for API documentation.</p>"
+    return "<h1>ExposeChain API</h1><p>Frontend build not found. Visit <a href='/docs'>/docs</a> for API documentation.</p>"
 
 
 if __name__ == "__main__":

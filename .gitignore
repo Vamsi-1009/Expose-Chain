@@ -55,3 +55,8 @@ htmlcov/
 reports/
 scans/
 .claude/
+
+# Frontend (React/Vite) - dist/ is committed intentionally so the
+# production server can serve it without needing Node.js installed
+frontend/node_modules/
+!frontend/dist/
