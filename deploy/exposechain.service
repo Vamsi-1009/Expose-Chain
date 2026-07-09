@@ -1,0 +1,27 @@
+# systemd unit for ExposeChain (FastAPI/Uvicorn)
+# Install to: /etc/systemd/system/exposechain.service
+
+[Unit]
+Description=ExposeChain FastAPI application
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/apps/Expose-Chain
+Environment="PATH=/root/apps/Expose-Chain/venv/bin"
+EnvironmentFile=/root/apps/Expose-Chain/.env
+ExecStart=/root/apps/Expose-Chain/venv/bin/uvicorn src.main:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=on-failure
+RestartSec=5
+
+# Memory/process hardening for a 2GB box
+MemoryMax=768M
+TasksMax=100
+
+# Minor sandboxing (safe defaults, doesn't restrict app functionality)
+NoNewPrivileges=true
+ProtectSystem=false
+
+[Install]
+WantedBy=multi-user.target
