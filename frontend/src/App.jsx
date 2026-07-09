@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Header from './components/Header.jsx'
+import Hero from './components/Hero.jsx'
 import SearchBar from './components/SearchBar.jsx'
 import LoadingTerminal from './components/LoadingTerminal.jsx'
 import ErrorBanner from './components/ErrorBanner.jsx'
@@ -38,6 +39,7 @@ export default function App() {
       <Header />
 
       <main className="max-w-7xl mx-auto px-6 py-10">
+        {status === 'idle' && <Hero />}
         <SearchBar onScan={handleScan} scanning={status === 'loading'} />
 
         {status === 'loading' && <LoadingTerminal done={false} />}
