@@ -1,74 +1,65 @@
 # 🛡️ ExposeChain
 ### AI-Powered Threat Intelligence & Attack Surface Analysis Platform
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Vamsi-1009/Expose-Chain)
+Live at: **[webstocking.com/exposechain](https://webstocking.com/exposechain/)**
 
 ## ✨ Features
 
 ### Core Intelligence Capabilities
 - 🔍 **Comprehensive DNS Analysis** - Full DNS record enumeration and analysis
 - 📋 **WHOIS Intelligence** - Domain registration and ownership data
-- 🌍 **Geolocation Tracking** - IP geolocation and hosting analysis
+- 🌍 **Geolocation Tracking** - IP geolocation and hosting analysis, plotted on an interactive map
 - 🔐 **SSL/TLS Certificate Analysis** - Certificate validation and security assessment
-- 🤖 **AI Risk Prediction** - Multi-factor threat scoring and recommendations
+- 🤖 **AI Risk Prediction** - Rule-based weighted scoring across domain, SSL, infrastructure, and DNS signals
 
 ### Technical Features
 - ⚡ **Async/Parallel Scanning** - Fast concurrent API calls
 - 🛡️ **SSRF Protection** - Prevents internal network scanning
 - 🚦 **Rate Limiting** - Protects API from abuse
-- 💾 **Supabase Database** - Persistent scan history with PostgreSQL
-- 📊 **Interactive Visualizations** - Maps, charts, and animations
-- 🎨 **Modern UI** - Responsive design with 25+ animations
+- 📊 **Interactive Visualizations** - Leaflet map, animated risk gauges
+- 🎨 **Modern UI** - React frontend, light SaaS dashboard theme, no database required (all scans are real-time)
 
 ---
 
-## 🚀 Deployment Options
+## 🏗️ Architecture
 
-### Option 1: Deploy to Vercel + Supabase (Recommended)
+Single service, no database:
 
-**Perfect for production deployments with zero DevOps**
+- **Backend**: FastAPI (Python 3.12) + Uvicorn - see [`src/`](src)
+- **Frontend**: React + Vite, built to static files at `frontend/dist/` and served directly by FastAPI - see [`frontend/`](frontend)
+- **Process manager**: systemd (`exposechain.service`)
+- **Reverse proxy**: Nginx with Let's Encrypt SSL
+- **Deployment**: Ubuntu VPS (1 vCPU / 2GB RAM), auto-deployed via GitHub Actions on every push to `main`
 
-1. **Setup Supabase Database** (5 minutes)
-   - Create account at [supabase.com](https://supabase.com)
-   - Create new project
-   - Run migration from `migrations/supabase_migration.sql`
-   - Copy database connection string
+## 🚀 Local Development
 
-2. **Deploy to Vercel** (5 minutes)
-   - Click the "Deploy with Vercel" button above
-   - Connect your GitHub account
-   - Set environment variables:
-     - `DATABASE_URL`: Your Supabase connection string
-     - `CORS_ORIGINS`: Your Vercel deployment URL
-   - Deploy!
-
-3. **Detailed Instructions**: See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
-4. **Checklist**: Use [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)
-
-### Option 2: Local Development
-
-**For testing and development**
-
-1. **Install Dependencies**
+1. **Backend**
    ```bash
+   python -m venv venv
+   source venv/bin/activate  # or venv\Scripts\activate on Windows
    pip install -r requirements.txt
-   ```
-
-2. **Configure Environment**
-   ```bash
    cp .env.example .env
-   # Edit .env with your settings
-   ```
-
-3. **Run the Application**
-   ```bash
    uvicorn src.main:app --reload
    ```
 
-4. **Access the Platform**
+2. **Frontend** (only needed if changing the UI - the built output is already committed to `frontend/dist/`)
+   ```bash
+   cd frontend
+   npm install
+   npm run dev      # local dev server with hot reload
+   npm run build    # produces frontend/dist/, served by FastAPI at "/"
+   ```
+
+3. **Access the Platform**
    - Frontend: http://localhost:8000/
    - API Docs: http://localhost:8000/docs
    - Health Check: http://localhost:8000/health
+
+## 🔁 Deployment
+
+Every push to `main` auto-deploys to the production VPS via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) - GitHub Actions SSHs in, pulls the latest code, reinstalls Python dependencies if `requirements.txt` changed, and restarts the `exposechain` systemd service.
+
+Manual deploy configs (Nginx site config, systemd unit) live in [`deploy/`](deploy) for reference.
 
 ---
 
@@ -98,19 +89,22 @@ curl -X POST http://localhost:8000/api/scan \
 
 ## 📂 Project Structure
 ```
-exposechain/
+Expose-Chain/
 ├── src/
 │   ├── api/              # API routes and endpoints
-│   ├── models/           # Pydantic models
-│   ├── services/         # Business logic (future)
-│   ├── utils/            # Utility functions
+│   ├── models/           # Pydantic request/response models
+│   ├── services/         # DNS, WHOIS, SSL, geolocation, AI risk scoring
+│   ├── utils/            # Rate limiting, logging, validators
 │   ├── config/           # Configuration settings
 │   └── main.py           # Application entry point
-├── tests/                # Test files
-├── static/               # Static files (future)
-├── templates/            # HTML templates (future)
-├── requirements.txt      # Python dependencies
-└── .env.example          # Environment variables template
+├── frontend/
+│   ├── src/              # React components
+│   └── dist/             # Built static output (committed, served by FastAPI)
+├── deploy/                # Nginx + systemd reference configs
+├── .github/workflows/     # Auto-deploy GitHub Actions workflow
+├── tests/                 # Test files
+├── requirements.txt       # Python dependencies
+└── .env.example           # Environment variables template
 ```
 
 ---
@@ -119,6 +113,4 @@ exposechain/
 ExposeChain is built for educational and ethical cybersecurity research. Unauthorized scanning without permission is illegal.
 
 **Author**: Vamsi Krishna
-**Version**: 1.0.0
-# Deploy trigger
-
+**Version**: 2.0.0
