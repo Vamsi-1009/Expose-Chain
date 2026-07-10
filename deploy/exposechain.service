@@ -7,11 +7,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
-WorkingDirectory=/root/apps/Expose-Chain
-Environment="PATH=/root/apps/Expose-Chain/venv/bin"
-EnvironmentFile=/root/apps/Expose-Chain/.env
-ExecStart=/root/apps/Expose-Chain/venv/bin/uvicorn src.main:app --host 127.0.0.1 --port 8000 --workers 1
+User=vamsi
+WorkingDirectory=/home/vamsi/apps/Expose-Chain
+Environment="PATH=/home/vamsi/apps/Expose-Chain/venv/bin"
+EnvironmentFile=/home/vamsi/apps/Expose-Chain/.env
+ExecStart=/home/vamsi/apps/Expose-Chain/venv/bin/uvicorn src.main:app --host 127.0.0.1 --port 8000 --workers 1
 Restart=on-failure
 RestartSec=5
 
