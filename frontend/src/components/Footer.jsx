@@ -12,7 +12,7 @@ export default function Footer() {
           <span className="text-sm font-bold" style={{ color: '#475569' }}>ExposeChain v2.0.0 - AI-Powered</span>
         </div>
         <p className="text-sm font-semibold" style={{ color: '#64748b' }}>
-          Built by <span style={{ color: '#475569' }}>Vamsi Krishna</span> &bull; Threat Intelligence Platform
+          Threat Intelligence Platform
         </p>
       </div>
     </footer>

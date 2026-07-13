@@ -112,5 +112,4 @@ Expose-Chain/
 ## ⚠️ Disclaimer
 ExposeChain is built for educational and ethical cybersecurity research. Unauthorized scanning without permission is illegal.
 
-**Author**: Vamsi Krishna
 **Version**: 2.0.0

@@ -29,9 +29,6 @@ export default function Header() {
             </div>
             <div className="text-right hidden md:block">
               <div className="mono text-xs font-bold" style={{ color: '#475569' }}>v2.0.0</div>
-              <div className="text-xs font-semibold" style={{ color: '#94a3b8' }}>
-                by <span style={{ color: '#64748b' }}>Vamsi Krishna</span>
-              </div>
             </div>
           </div>
         </div>
