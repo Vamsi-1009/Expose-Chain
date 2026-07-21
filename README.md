@@ -1,7 +1,7 @@
 # 🛡️ ExposeChain
 ### AI-Powered Threat Intelligence & Attack Surface Analysis Platform
 
-Live at: **[webstocking.com/exposechain](https://webstocking.com/exposechain/)**
+🔗 **Live Demo:** [webstocking.com/exposechain](https://webstocking.com/exposechain/)
 
 ## ✨ Features
 
