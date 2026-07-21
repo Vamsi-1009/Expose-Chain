@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from src.api import router
 from src.config import settings
 from src.utils.logging_config import setup_logging
@@ -17,18 +18,29 @@ from slowapi.errors import RateLimitExceeded
 # Setup logging
 setup_logging()
 
-# Create FastAPI application
+# Create FastAPI application.
+# /docs and /redoc are only exposed when DEBUG is on - the production
+# deployment runs with DEBUG=False (see .env.example) so the OpenAPI
+# schema and interactive docs aren't publicly browsable.
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.VERSION,
     description="AI-Powered Attack Surface & Threat Intelligence Platform",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url="/openapi.json" if settings.DEBUG else None,
 )
 
 # Register rate limiter
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# The app only ever binds to 127.0.0.1 (see deploy/exposechain.service) and
+# is reached exclusively through the local Nginx reverse proxy, so trusting
+# X-Forwarded-For from that loopback peer is safe. Without this, every
+# request's client IP appears as 127.0.0.1 to slowapi, collapsing per-IP
+# rate limiting into a single shared bucket for all real users.
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="127.0.0.1")
 
 # Configure CORS
 app.add_middleware(

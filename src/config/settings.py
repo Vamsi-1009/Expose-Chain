@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # Application Settings
     ENVIRONMENT: str = "development"
-    DEBUG: bool = True
+    DEBUG: bool = False
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     APP_NAME: str = "ExposeChain"

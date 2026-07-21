@@ -27,5 +27,5 @@ cachetools==5.5.0
 geoip2==4.8.0
 
 # SSL Certificate Analysis
-cryptography==42.0.5
-pyOpenSSL==24.0.0
+cryptography==43.0.1
+pyOpenSSL==24.2.1

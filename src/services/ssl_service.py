@@ -11,8 +11,13 @@ import OpenSSL
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cachetools import TTLCache
+from src.utils.validators import resolve_and_validate
 
 logger = logging.getLogger("exposechain")
+
+# Ports a legitimate TLS certificate check ever needs. Blocks the
+# endpoint from being used as an arbitrary internal-network port scanner.
+ALLOWED_PORTS = {443, 465, 587, 636, 989, 990, 993, 995, 8443}
 
 
 class SSLService:
@@ -37,17 +42,33 @@ class SSLService:
         if port is None:
             port = self.default_port
 
+        if port not in ALLOWED_PORTS:
+            return {
+                "success": False,
+                "hostname": hostname,
+                "port": port,
+                "error": f"Port {port} is not permitted for SSL/TLS certificate checks."
+            }
+
         cache_key = f"ssl:{hostname}:{port}"
         if cache_key in self._cache:
             logger.debug("Cache hit for %s", cache_key)
             return self._cache[cache_key]
 
         try:
+            # Resolve and validate the target IP right before connecting,
+            # then connect directly to that IP (with SNI/hostname verification
+            # still pinned to `hostname`). Re-resolving at connect time via
+            # socket.create_connection(hostname, ...) would be vulnerable to
+            # DNS rebinding: the name could resolve to a public IP during
+            # validation and to an internal IP by the time the socket opens.
+            safe_ips = resolve_and_validate(hostname)
+
             # Create SSL context
             context = ssl.create_default_context()
-            
+
             # Connect and get certificate
-            with socket.create_connection((hostname, port), timeout=self.timeout) as sock:
+            with socket.create_connection((safe_ips[0], port), timeout=self.timeout) as sock:
                 with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                     # Get certificate in DER format
                     der_cert = ssock.getpeercert(binary_form=True)
@@ -79,6 +100,14 @@ class SSLService:
                     self._cache[cache_key] = result
                     return result
                     
+        except ValueError as e:
+            logger.warning("Blocked SSL check for %s:%s - %s", hostname, port, str(e))
+            return {
+                "success": False,
+                "hostname": hostname,
+                "port": port,
+                "error": str(e)
+            }
         except socket.timeout:
             return {
                 "success": False,

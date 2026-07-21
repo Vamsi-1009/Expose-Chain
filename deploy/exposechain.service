@@ -19,9 +19,17 @@ RestartSec=5
 MemoryMax=768M
 TasksMax=100
 
-# Minor sandboxing (safe defaults, doesn't restrict app functionality)
+# Sandboxing. The app has no need to write outside its own working
+# directory or touch other users' home directories, so these are safe:
+# ProtectSystem=full leaves WorkingDirectory writable but makes /usr,
+# /boot, and /etc read-only for this process.
 NoNewPrivileges=true
-ProtectSystem=false
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
 
 [Install]
 WantedBy=multi-user.target

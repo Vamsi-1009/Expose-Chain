@@ -22,6 +22,9 @@ jobs:
             git reset --hard origin/main
             source venv/bin/activate
             pip install -q -r requirements.txt
+            # Build gate: fail the deploy (leaving the old process running)
+            # rather than restart into a broken import/syntax error.
+            python -c "import src.main"
             deactivate
             sudo systemctl restart exposechain
             sleep 2

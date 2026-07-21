@@ -5,9 +5,11 @@ Async endpoints with rate limiting and AI analysis (No Database)
 import asyncio
 import uuid
 import logging
+import validators as validators_lib
 from fastapi import APIRouter, HTTPException, Request
+from slowapi.util import get_remote_address
 from src.models import ScanRequest, ScanResponse
-from src.utils import detect_target_type
+from src.utils import detect_target_type, validate_target_not_internal
 from src.services import DNSService, WHOISService, GeolocationService, SSLService, AIRiskPredictor
 from src.utils.rate_limiter import limiter
 from datetime import datetime
@@ -50,6 +52,28 @@ async def api_info():
             "report": "/api/report/{scan_id}"
         }
     }
+
+
+def _validate_domain_target(request: Request, target: str) -> str:
+    """
+    Shared validation for the dedicated lookup endpoints (DNS/WHOIS/SSL).
+    Rejects malformed input and SSRF attempts against internal networks.
+    """
+    target = target.strip().lower()
+    if not validators_lib.domain(target):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid target: '{target}'. Must be a valid domain name (e.g., example.com)."
+        )
+    try:
+        validate_target_not_internal(target)
+    except ValueError as e:
+        logger.warning(
+            "Blocked SSRF attempt from %s: target=%s reason=%s",
+            get_remote_address(request), target, str(e)
+        )
+        raise HTTPException(status_code=400, detail=str(e))
+    return target
 
 
 @router.post("/api/scan", response_model=ScanResponse)
@@ -101,7 +125,10 @@ async def scan_target(request: Request, scan_request: ScanRequest):
 
         message = f"Complete security scan finished for domain: {scan_request.target}"
 
-        logger.info("Scan completed: id=%s target=%s", scan_id, scan_request.target)
+        logger.info(
+            "Scan completed: id=%s target=%s client=%s",
+            scan_id, scan_request.target, get_remote_address(request)
+        )
 
         return ScanResponse(
             success=True,
@@ -112,7 +139,10 @@ async def scan_target(request: Request, scan_request: ScanRequest):
         )
 
     except Exception as e:
-        logger.error("Scan failed for target %s: %s", scan_request.target, str(e), exc_info=True)
+        logger.error(
+            "Scan failed for target %s (client=%s): %s",
+            scan_request.target, get_remote_address(request), str(e), exc_info=True
+        )
         raise HTTPException(
             status_code=500,
             detail="An internal error occurred while processing your scan. Please try again."
@@ -123,6 +153,7 @@ async def scan_target(request: Request, scan_request: ScanRequest):
 @limiter.limit("20/minute")
 async def dns_lookup(request: Request, target: str):
     """Dedicated DNS lookup endpoint"""
+    target = _validate_domain_target(request, target)
     try:
         target_type = detect_target_type(target)
         results = await asyncio.to_thread(dns_service.comprehensive_dns_lookup, target, target_type)
@@ -139,6 +170,7 @@ async def dns_lookup(request: Request, target: str):
 @limiter.limit("20/minute")
 async def whois_lookup(request: Request, domain: str):
     """Dedicated WHOIS lookup endpoint"""
+    domain = _validate_domain_target(request, domain)
     try:
         whois_results = await asyncio.to_thread(whois_service.lookup_whois, domain)
 
@@ -163,6 +195,7 @@ async def whois_lookup(request: Request, domain: str):
 @limiter.limit("20/minute")
 async def ssl_certificate_check(request: Request, domain: str, port: int = 443):
     """Dedicated SSL certificate check endpoint"""
+    domain = _validate_domain_target(request, domain)
     try:
         cert_data = await asyncio.to_thread(ssl_service.get_certificate, domain, port)
 
