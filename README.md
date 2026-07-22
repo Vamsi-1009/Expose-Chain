@@ -52,7 +52,7 @@ Single service, no database:
 
 3. **Access the Platform**
    - Frontend: http://localhost:8000/
-   - API Docs: http://localhost:8000/docs
+   - API Docs: http://localhost:8000/docs (requires `DEBUG=True` in `.env` - disabled by default)
    - Health Check: http://localhost:8000/health
 
 ## 🔁 Deployment
@@ -60,6 +60,19 @@ Single service, no database:
 Every push to `main` auto-deploys to the production VPS via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) - GitHub Actions SSHs in, pulls the latest code, reinstalls Python dependencies if `requirements.txt` changed, and restarts the `exposechain` systemd service.
 
 Manual deploy configs (Nginx site config, systemd unit) live in [`deploy/`](deploy) for reference.
+
+---
+
+## 🔒 Security Hardening
+
+ExposeChain scans arbitrary user-supplied domains, so its own attack surface has been hardened against the OWASP Top 10:
+
+- **SSRF protection on every lookup endpoint** - `/api/scan`, `/api/dns`, `/api/whois`, and `/api/ssl` all resolve the target and reject private/loopback/link-local/reserved IPs (including the cloud metadata address) before making any outbound connection.
+- **DNS-rebinding safe** - the SSL certificate check connects to the IP it just validated instead of re-resolving the hostname at connect time, closing the TOCTOU gap between validation and connection.
+- **TLS-only port allowlist** - `/api/ssl/{domain}` only accepts standard TLS ports, so it can't be used to port-scan internal services.
+- **Locked-down production config** - `/docs`, `/redoc`, and `/openapi.json` are disabled unless `DEBUG=True`; rate limiting keys on the real client IP behind the Nginx reverse proxy instead of collapsing to one shared bucket.
+- **Deploy-time build gate** - CI verifies the app still imports cleanly before restarting the production service, so a broken push can't take the site down.
+- **systemd sandboxing** - the service runs as an unprivileged user with `ProtectSystem`, `ProtectHome`, and `PrivateTmp` restricting filesystem access.
 
 ---
 
